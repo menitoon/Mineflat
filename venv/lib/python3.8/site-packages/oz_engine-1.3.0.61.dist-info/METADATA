@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: oz-engine
+Version: 1.3.0.61
+Summary: For Text-based games
+Author: menitoon
+Author-email: menitoine@gmail.com
+Keywords: python,text,shell,game
+Classifier: Development Status :: 3 - Alpha
+Classifier: Programming Language :: Python :: 3
+
+Oz-Engine is a Engine that allow to control characters individually like sprites you would have in a classic game engine.
