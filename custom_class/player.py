@@ -3,11 +3,11 @@ import oz_engine as oz
 
 class Player(oz.Sprite):
 
-    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera"
+    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory"
 
     def __init__(
       self, canvas_owner, char : str, position : dict,
-      name : str, camera, group=[], layer : int=0
+      name : str, camera, inventory, group=[], layer : int=0
     ):
 
         self.register_info(canvas_owner, char, position, name, group, layer)
@@ -16,6 +16,7 @@ class Player(oz.Sprite):
         self.direction = {"x" : 1, "y" : 0}
         self.reach = 3
         self.camera = camera
+        self.inventory = {}
         
         
   

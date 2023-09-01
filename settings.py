@@ -24,9 +24,9 @@ BLOCKS = {
 }
 
 ORES = {
-  "iron" : {"proba" : 0.05, "neighboor" : 0.5, "max": 8},
+  "iron" : {"proba" : 0.05, "neighboor" : 0.4, "max": 8},
   "diamond" : {"proba" : 0.001, "neighboor" : 0.25, "max": 4},
-  "coal" : {"proba" : 0.08, "neighboor" : 0.9, "max" : 10}
+  "coal" : {"proba" : 0.08, "neighboor" : 0.85, "max" : 10}
 }
 
 STONE = (0.0001, 1.0)

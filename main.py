@@ -115,8 +115,9 @@ async def start(ctx):
     
     
     chunk_loader.load_surroundings(player_pos, ctx.author)
-
-    screen = await channel.send(f"```{open_rooms[channel]['camera'].render()}\n{player.position}\nDirection : {player.get_turn_str()}```")
+    string_pos = f'({player.position["x"]},{player.position["y"]})'
+  
+    screen = await channel.send(f"```{open_rooms[channel]['camera'].render()}\n{string_pos}\nDirection : {player.get_turn_str()}```")
     camera_room[camera] = {"message" : screen, "owner" : player}
     
   
@@ -234,9 +235,10 @@ async def act(reaction, user):
   
     
     r = camera.render()
-
+    string_pos = f'({player.position["x"]},{player.position["y"]})'
+  
     await reaction.message.edit(
-      content=f"```{r}\n{player.position}\nDirection : {player.get_turn_str()}```"
+      content=f"```{r}\n{string_pos}\nDirection : {player.get_turn_str()}```"
     )
     await update_screens(player, camera)
 
@@ -248,9 +250,11 @@ async def update_screens(player, camera):
 
           camera_info = camera_room[todo_camera]
           players_screen = camera_info['owner']
+          screen_x = players_screen["x"]
+          screen_y = players_screen["y"]
           
           await camera_info["message"].edit(
-            f"```{todo_camera.render()}\n{players_screen}\nDirection : {players_screen.get_turn_str()}```")
+            f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {players_screen.get_turn_str()}```")
           
 def mine(player):
   
@@ -271,9 +275,14 @@ def mine(player):
   chunk_id = chunk_loader.get_chunk_id(block_pos)
   chunk_loader.chunk_to_update.add(chunk_id)
   block_selected = canvas.get_sprite(block_selected[0])
-  
+  player_to_update.add(player)
+  block_type = block_selected.block_id
   chunk_loader.chunk_loaded[chunk_id]["data"].remove(block_selected)
   block_selected.kill()
+  player.inventory[block_type] = player.inventory.get(block_type, 0) + 1
+  
+  
+  
   
 def build(player):
 
