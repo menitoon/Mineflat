@@ -18,8 +18,16 @@ import time
 
 
 keep_alive()
-TOKEN = os.environ["TOKEN"]  
-bot = commands.Bot(command_prefix='!')
+TOKEN = os.environ["TOKEN"] 
+intents = discord.Intents.default()
+intents.typing = True  
+intents.presences = False
+intents.guilds = True
+intents.messages = True
+intents.reactions = True
+intents.message_content = True
+
+bot = commands.Bot(command_prefix='!', intents=intents)
 
 open_rooms = {}
 camera_room = {}
@@ -35,8 +43,8 @@ player_to_update = set()
 
 canvas = oz.Canvas(" ")
 cc.canvas = canvas
-chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y))
-#chunk_loader.reset_data()
+chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5)
+chunk_loader.reset_data()
 
 
 @bot.event
@@ -72,9 +80,9 @@ async def delete_all_channel_from_category(category):
 
 @bot.command()
 async def start(ctx):
-
+    print("Command initiated !")
     str_author = str(ctx.author)
-  
+    
     if str_author in players:
       return
   
@@ -95,10 +103,9 @@ async def start(ctx):
     category = discord.utils.get(ctx.guild.categories, name=CATEGORY_ROOM)
     
     # Create the private channel with the specified name and permissions
-    channel = await ctx.guild.create_text_channel(name=f"Room#{len(open_rooms)}", overwrites=rules, category=category)
-
+    channel_name = f"Room#{len(open_rooms)}"
+    channel = await ctx.guild.create_text_channel(name=channel_name, overwrites=rules, category=category)
     
-
     # init player's data
     player_data = cc.PlayerLoader.init_data(str_author, canvas)
     player = player_data["reference"]
@@ -113,14 +120,16 @@ async def start(ctx):
       }
 
     
-    
     chunk_loader.load_surroundings(player_pos, ctx.author)
     string_pos = f'({player.position["x"]},{player.position["y"]})'
   
     screen = await channel.send(f"```{open_rooms[channel]['camera'].render()}\n{string_pos}\nDirection : {player.get_turn_str()}```")
     camera_room[camera] = {"message" : screen, "owner" : player}
-    
-  
+
+    empty_message = await channel.send("‎")
+    chat = await empty_message.create_thread(name="Chat", auto_archive_duration=60)
+    open_rooms[channel]["chat"] = chat
+      
     # adds reactions to control
     CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
 
@@ -138,11 +147,11 @@ async def delete_roles_and_channel(channel):
 
 @bot.command()
 async def quit(ctx):
-  
-  if not str(ctx.channel).startswith("room"):
+  print(ctx.channel)
+  if str(ctx.channel) != "Chat":
     return
-
-  await close(ctx.channel)
+  
+  await close(ctx.channel.parent)
 
 async def close(channel):
   player = open_rooms[channel]["player"]
@@ -157,15 +166,12 @@ async def close(channel):
     if chunk["players"] == set():
       chunk_loader.unload_chunk(chunk_id)
 
-  
   await update_check()
   await delete_roles_and_channel(channel)
   
 @tasks.loop(seconds=30)
 async def check_inactivity():
-    
   open_rooms_instance = open_rooms.copy()
-  
   for channel in open_rooms_instance:
     async for message in channel.history(limit=1):
       time_since_message = datetime.datetime.utcnow() - open_rooms_instance[channel]["last_activity"]
@@ -175,10 +181,9 @@ async def check_inactivity():
         
 @tasks.loop(seconds=10)
 async def update_check():
-
   for chunk in chunk_loader.chunk_to_update:
     chunk_loader.save_chunk(chunk)
-
+    
   for player in player_to_update:
     # save position
     cc.PlayerLoader.save_data(player)
@@ -249,15 +254,14 @@ async def update_screens(player, camera):
         if todo_camera.is_renderable(player.position):
 
           camera_info = camera_room[todo_camera]
-          players_screen = camera_info['owner']
-          screen_x = players_screen["x"]
-          screen_y = players_screen["y"]
+          player_updated = camera_info['owner']
+          screen_x = player_updated.position["x"]
+          screen_y = player_updated.position["y"]
           
           await camera_info["message"].edit(
-            f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {players_screen.get_turn_str()}```")
+            f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {player.get_turn_str()}```")
           
 def mine(player):
-  
   block_selected = ""
   block_pos = player.position.copy()
   reach_left = player.reach
@@ -281,11 +285,7 @@ def mine(player):
   block_selected.kill()
   player.inventory[block_type] = player.inventory.get(block_type, 0) + 1
   
-  
-  
-  
 def build(player):
-
   build_destination = {
     "x": player.position["x"] + player.direction["x"],
     "y": player.position["y"] + player.direction["y"]
@@ -303,5 +303,4 @@ def build(player):
   chunk_loader.chunk_loaded[chunk_id]["data"].add(block)
   return True
   
-
 bot.run(TOKEN)

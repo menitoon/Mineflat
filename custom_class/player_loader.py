@@ -21,6 +21,8 @@ class PlayerLoader:
       "y" : random.randint(-3, 3) * PERLIN_SIZE[1]
     }
 
+    print(owner, "Create")
+    
     data = {"position" : position, "inventory": {}}
     # write data
     file = open(f"PlayerData/{owner}.txt", "wb")
@@ -43,7 +45,8 @@ class PlayerLoader:
     
   @staticmethod
   def init_data(owner : str, canvas):
-    
+
+    print(owner, "INIT")
      
     if os.path.isfile(f"PlayerData/{owner}.txt"):
       # load data if something is already writen

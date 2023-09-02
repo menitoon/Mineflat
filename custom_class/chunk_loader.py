@@ -1,22 +1,27 @@
 import os
 import settings
 import math
-import perlin as pl
+from perlin import PerlinNoise
 from .block import Block
 from settings import *
 
 SIZE = settings.PERLIN_SIZE
 
 class ChunkLoader:
-    __slots__ = "size", "perl", "chunk_loaded" , "chunk_to_update", "canvas_owner"
+    __slots__ = "size", "chunk_loaded" , "chunk_to_update", "canvas_owner", "fractal", "perlin"
   
-    def __init__(self, canvas_owner, size : tuple):
+    def __init__(self, canvas_owner, size : tuple, fractal : int):
         self.size = size
-        self.perl = pl.PerlinNoise((SIZE[0], SIZE[1]))
-        self.perl.SEED = get_seed()
+        # contains all different perlin noise
+        self.perlin = PerlinNoise(SIZE)
+        self.perlin.SEED = get_seed()
+       
+        
         self.chunk_loaded = {}
         self.chunk_to_update = set()
         self.canvas_owner = canvas_owner
+
+    
   
     def load_surroundings(self, position : dict, author):
       surroundings = (
@@ -209,7 +214,7 @@ class ChunkLoader:
         new_block = ""
         block_counter = -1
 
-        new_block = Block.define_block(self.perl.get_perlin_at(chunk_position), chunk_position)
+        new_block = Block.define_block(self.perlin.get_perlin_at(chunk_position), chunk_position)
         # check if is air block
         new_block = "air" if new_block is None else new_block["name"]
         last_block = new_block
@@ -226,7 +231,7 @@ class ChunkLoader:
                 
                 last_block = new_block
 
-                value = self.perl.get_perlin_at(pos_placement)
+                value = self.perlin.get_perlin_at(pos_placement)
                 block_info = Block.define_block(value, pos_placement)
                 if not block_info is None:
                   # solid block
@@ -249,7 +254,7 @@ class ChunkLoader:
         #file_chunk.write("your mom :")
         file_chunk.close()
         
-        self.perl.reset_gradient_cache()
+        self.perlin.reset_gradient_cache()
 
 
     def reset_data(self):

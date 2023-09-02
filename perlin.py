@@ -11,16 +11,6 @@ class PerlinNoise:
         self.size = size  # taille d'un carré (20x20 par défaut)
         self.gradient_vectors = {}
         self.SEED = 0.0
-        
-  
-        #if os.path.isfile("Chunks/seed.txt"):
-        #    self.SEED = float(open("Chunks/seed.txt", "r").read())
-          
-        #else:
-        #  seed_file = open("Chunks/seed.txt", "w")
-        #  self.SEED = random.random()
-        #  seed_file.write(str(self.SEED))
-        # seed_file.close()
           
 
     def smoothstep(self, t):

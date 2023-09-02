@@ -19,7 +19,8 @@ BLOCKS = {
   "stone": {"name": "stone", "char": "█", "group" :["wall"]},
   "iron": {"name": "iron" ,"char": "*", "group" : ["wall"]},
   "diamond" : {"name": "diamond" ,"char": "✦", "group" : ["wall"]},
-  "coal" : {"name": "coal" ,"char": "#", "group" : ["wall"]}
+  "coal" : {"name": "coal" ,"char": "#", "group" : ["wall"]},
+  "shop" : {"name" : "shop", "char": "$", "group" : []}
   
 }
 
@@ -30,3 +31,4 @@ ORES = {
 }
 
 STONE = (0.0001, 1.0)
+SHOP = {"range" : (-1 , -0.00001), "proba" : 0.001}
