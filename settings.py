@@ -20,15 +20,19 @@ BLOCKS = {
   "iron": {"name": "iron" ,"char": "*", "group" : ["wall"]},
   "diamond" : {"name": "diamond" ,"char": "✦", "group" : ["wall"]},
   "coal" : {"name": "coal" ,"char": "#", "group" : ["wall"]},
-  "shop" : {"name" : "shop", "char": "$", "group" : []}
+  "shop" : {"name" : "shop", "char": "$", "group" : ["wall", "shop"]}
   
 }
 
 ORES = {
-  "iron" : {"proba" : 0.05, "neighboor" : 0.4, "max": 8},
-  "diamond" : {"proba" : 0.001, "neighboor" : 0.25, "max": 4},
-  "coal" : {"proba" : 0.08, "neighboor" : 0.85, "max" : 10}
+  "iron" : {"proba" : 0.05, "neighboor" : 0.4, "max": 8, "price_unit" : 3},
+  "diamond" : {"proba" : 0.001, "neighboor" : 0.25, "max": 4, "price_unit" : 6},
+  "coal" : {"proba" : 0.08, "neighboor" : 0.85, "max" : 10, "price_unit" : 1}
 }
 
 STONE = (0.0001, 1.0)
 SHOP = {"range" : (-1 , -0.00001), "proba" : 0.001}
+
+
+AMOUNT_ARTICLE_RANGE = (1, 2)
+DAY_CHANGE = 2

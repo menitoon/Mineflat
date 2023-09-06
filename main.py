@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 
 import oz_engine as oz
 import custom_class as cc
+import Structures as st
 import settings
 from keep_alive import keep_alive
 
@@ -44,7 +45,7 @@ player_to_update = set()
 canvas = oz.Canvas(" ")
 cc.canvas = canvas
 chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5)
-chunk_loader.reset_data()
+#chunk_loader.reset_data()
 
 
 @bot.event
@@ -121,20 +122,20 @@ async def start(ctx):
 
     
     chunk_loader.load_surroundings(player_pos, ctx.author)
+    player.is_in_shop = player.is_shop_near()
     string_pos = f'({player.position["x"]},{player.position["y"]})'
   
     screen = await channel.send(f"```{open_rooms[channel]['camera'].render()}\n{string_pos}\nDirection : {player.get_turn_str()}```")
     camera_room[camera] = {"message" : screen, "owner" : player}
-
+    
     empty_message = await channel.send("‎")
     chat = await empty_message.create_thread(name="Chat", auto_archive_duration=60)
+    # register additional keys
     open_rooms[channel]["chat"] = chat
-      
+    open_rooms[channel]["screen"] = screen
+  
     # adds reactions to control
-    CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
-
-    for control in CONTROLS:
-      await screen.add_reaction(control)
+    await add_reactions(screen)
 
 async def delete_roles_and_channel(channel):
   room_id = list(open_rooms.keys()).index(channel) # get which "#" room (ex : 1, 2, 3 ect) 
@@ -150,11 +151,12 @@ async def quit(ctx):
   print(ctx.channel)
   if str(ctx.channel) != "Chat":
     return
-  
+  print(ctx.channel.parent)
   await close(ctx.channel.parent)
 
 async def close(channel):
   player = open_rooms[channel]["player"]
+  cc.PlayerLoader.save_data(player)
   player.kill()
   author = open_rooms[channel]["author"]
   players.remove(str(author))
@@ -183,9 +185,9 @@ async def check_inactivity():
 async def update_check():
   for chunk in chunk_loader.chunk_to_update:
     chunk_loader.save_chunk(chunk)
-    
+  
   for player in player_to_update:
-    # save position
+    # save player's data
     cc.PlayerLoader.save_data(player)
 
 @bot.command()
@@ -195,7 +197,6 @@ async def reset(ctx):
 
 @bot.event
 async def on_reaction_add(reaction, user):
-
     if user.bot:
         return
     
@@ -212,33 +213,35 @@ async def act(reaction, user):
 
     s_reaction = str(reaction)
     old_pos = player.position.copy()
-
-    
     player.move(s_reaction)
-    
+
+    need_update = False
+  
     if s_reaction == "⛏️":
-      mine(player)
+      player.mine(chunk_loader, player_to_update)
+      need_update = True
 
     elif s_reaction == "🔄":
       player.turn()
+      need_update = True
     
     elif s_reaction == "🏗️":
-      if build(player) is False:
+      need_update = player.build(chunk_loader)
+      if need_update == False:
         # execute build command and checks if 
         # was able to build if not 
         # return and end function
         return
+
+    await shop(player, reaction)
   
-    elif old_pos != player.position:
+    if old_pos != player.position:
       player_to_update.add(player)
-    else:
+      chunk_loader.load_and_unload_chunks(old_pos, player.position, author)
+    elif not need_update:
       #nothing todo
       return
-    
-    
-    chunk_loader.load_and_unload_chunks(old_pos, player.position, author)
-  
-    
+      
     r = camera.render()
     string_pos = f'({player.position["x"]},{player.position["y"]})'
   
@@ -261,46 +264,76 @@ async def update_screens(player, camera):
           await camera_info["message"].edit(
             f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {player.get_turn_str()}```")
           
-def mine(player):
-  block_selected = ""
-  block_pos = player.position.copy()
-  reach_left = player.reach
+
+async def shop(player, reaction):
+
+  shop_position = player.is_shop_near()
   
-  while (reach_left > 0) and (len(block_selected) < 1):
-    block_pos["x"] += player.direction["x"]
-    block_pos["y"] += player.direction["y"]
-    block_selected = canvas.get_elements(block_pos)
-    reach_left -= 1
+  if not shop_position is None:
+      if not player.is_in_shop:
+        # add reaction to enter shop
+        await reaction.message.add_reaction("🛒")
+        player.is_in_shop = True
+      elif str(reaction) == "🛒":
+        
+        #execute shop
+
+        # get channels, message, chat info
+        channel = reaction.message.channel
+        screen = open_rooms[channel]["screen"]
+        chat = open_rooms[channel]["chat"]
+
+        shop = st.Shop(shop_position)
+        articles = shop.define_articles()
+        text = "---Shop---\n"
+        inventory = player.inventory.copy()
+        print(inventory)
+        for article in articles:
+          char = settings.BLOCKS[article]["char"]
+          char = "\*" if char == "*" else char
+          sentence =  f"-{char} {article} : {articles[article]} coins"
+
+          if article in inventory:
+            # if object is in inventory
+            sentence += f", you have {inventory[article]}"
+            sentence = "**" + sentence + "**"
+          else:
+            # unable to buy
+            sentence = "*" + sentence + "*"
+          sentence += "\n"
+          text += sentence
+        
+        # check if inventory is empty
+        if inventory == {}:
+          text += "..."
+        
+        shop_message = await chat.send(text)
+
+        open_rooms[channel]["shop_message"] = shop_message
+
+        # remove controls so player can't move
+        CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
+        for emoji in CONTROLS:
+          await screen.remove_reaction(emoji, bot.user)
+
+        list = (
+          (":one:"), (":two:"), (":three:"), (":four:"), (":five:"), (":six:"), (":seven:"), (":eight:"), (":nine:"), (":keycap_ten:")
+        )
+
+        
+        for emoji, article in zip(list, articles):
+          if article in inventory: 
+            await shop_message.add_reaction(emoji)
+            
+  else:
+    player.is_in_shop = False
     
 
-  if len(block_selected) == 0:
-    return
-  
-  chunk_id = chunk_loader.get_chunk_id(block_pos)
-  chunk_loader.chunk_to_update.add(chunk_id)
-  block_selected = canvas.get_sprite(block_selected[0])
-  player_to_update.add(player)
-  block_type = block_selected.block_id
-  chunk_loader.chunk_loaded[chunk_id]["data"].remove(block_selected)
-  block_selected.kill()
-  player.inventory[block_type] = player.inventory.get(block_type, 0) + 1
-  
-def build(player):
-  build_destination = {
-    "x": player.position["x"] + player.direction["x"],
-    "y": player.position["y"] + player.direction["y"]
-                      }
-  
-  block_destination = canvas.get_elements(build_destination)
-  
-  if block_destination != []:
-    # if there is a block return
-    return False
 
-  
-  chunk_id = chunk_loader.get_chunk_id(build_destination)
-  block = cc.Block(canvas, "█", build_destination, "stone", "stone")
-  chunk_loader.chunk_loaded[chunk_id]["data"].add(block)
-  return True
-  
+async def add_reactions(message):
+  CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
+  for emoji in CONTROLS:
+    await message.add_reaction(emoji)
+
+
 bot.run(TOKEN)

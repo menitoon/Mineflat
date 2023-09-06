@@ -3,6 +3,7 @@ import settings
 import math
 from perlin import PerlinNoise
 from .block import Block
+from .generation import *
 from settings import *
 
 SIZE = settings.PERLIN_SIZE
@@ -214,7 +215,7 @@ class ChunkLoader:
         new_block = ""
         block_counter = -1
 
-        new_block = Block.define_block(self.perlin.get_perlin_at(chunk_position), chunk_position)
+        new_block = Generation.define_block(self.perlin.get_perlin_at(chunk_position), chunk_position)
         # check if is air block
         new_block = "air" if new_block is None else new_block["name"]
         last_block = new_block
@@ -232,7 +233,7 @@ class ChunkLoader:
                 last_block = new_block
 
                 value = self.perlin.get_perlin_at(pos_placement)
-                block_info = Block.define_block(value, pos_placement)
+                block_info = Generation.define_block(value, pos_placement)
                 if not block_info is None:
                   # solid block
                   pos_dict = {"x" : pos_placement[0], "y" : pos_placement[1]}

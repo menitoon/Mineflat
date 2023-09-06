@@ -10,7 +10,6 @@ class PlayerLoader:
   def load_data(owner : str):
     data = open(f"PlayerData/{owner}.txt", "rb")
     data = pickle.load(data)
-    print(data, "Loading Data")
     return data
 
   @staticmethod
@@ -21,8 +20,6 @@ class PlayerLoader:
       "y" : random.randint(-3, 3) * PERLIN_SIZE[1]
     }
 
-    print(owner, "Create")
-    
     data = {"position" : position, "inventory": {}}
     # write data
     file = open(f"PlayerData/{owner}.txt", "wb")
@@ -35,9 +32,9 @@ class PlayerLoader:
   @staticmethod
   def save_data(owner):
     data = {
-      "position" : owner.position,
-      "inventory" : owner.inventory
-    }
+        "position" : owner.position,
+        "inventory" : owner.inventory
+      }
     
     file = open(f"PlayerData/{owner.name}.txt", "wb")
     pickle.dump(data, file)
@@ -46,7 +43,7 @@ class PlayerLoader:
   @staticmethod
   def init_data(owner : str, canvas):
 
-    print(owner, "INIT")
+    print(owner, "ok boi is getting init")
      
     if os.path.isfile(f"PlayerData/{owner}.txt"):
       # load data if something is already writen
@@ -59,6 +56,9 @@ class PlayerLoader:
     # get position from data file
     position = data["position"]
     inventory = data["inventory"]
+
+    print(inventory,": Inventory")
+    
     # create camera
 
     SIZE_X = CANVAS_SIZE[0]
@@ -77,3 +77,6 @@ class PlayerLoader:
     data["camera"] = camera
      
     return data
+
+
+  
