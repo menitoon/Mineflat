@@ -3,7 +3,7 @@ import custom_class as cc
 
 class Player(oz.Sprite):
 
-    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop"
+    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop"
 
     def __init__(
       self, canvas_owner, char : str, position : dict,
@@ -17,10 +17,13 @@ class Player(oz.Sprite):
         self.reach = 3
         self.camera = camera
         self.inventory = inventory
-        self.is_in_shop = self.is_shop_near()
-        
+        self.is_near_shop = False
+        self.is_in_shop = False
     
     def move(self, action : str):
+
+        if self.is_in_shop:
+          return
       
         if action == "🔼":
             

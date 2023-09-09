@@ -5,6 +5,7 @@ import oz_engine as oz
 import custom_class as cc
 import Structures as st
 import settings
+import game_commands as cd
 from keep_alive import keep_alive
 
 import random as rng
@@ -44,6 +45,7 @@ player_to_update = set()
 
 canvas = oz.Canvas(" ")
 cc.canvas = canvas
+commands = cd.GameCommands(open_rooms)
 chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5)
 #chunk_loader.reset_data()
 
@@ -122,7 +124,6 @@ async def start(ctx):
 
     
     chunk_loader.load_surroundings(player_pos, ctx.author)
-    player.is_in_shop = player.is_shop_near()
     string_pos = f'({player.position["x"]},{player.position["y"]})'
   
     screen = await channel.send(f"```{open_rooms[channel]['camera'].render()}\n{string_pos}\nDirection : {player.get_turn_str()}```")
@@ -199,10 +200,19 @@ async def reset(ctx):
 async def on_reaction_add(reaction, user):
     if user.bot:
         return
+      
+    channel = reaction.message.channel
+    if str(channel) == "Chat":
+      channel = channel.parent
     
-    await act(reaction, user)
+    player = open_rooms[channel]["player"]
 
-async def act(reaction, user):
+    if player.is_in_shop:
+      await handle_shop_transaction(reaction, channel)
+    else:
+      await act(reaction)
+
+async def act(reaction):
     channel = reaction.message.channel
     open_rooms[channel]["last_activity"] = datetime.datetime.utcnow()
     player = open_rooms[channel]["player"]
@@ -233,7 +243,7 @@ async def act(reaction, user):
         # return and end function
         return
 
-    await shop(player, reaction)
+    await commands.shop(player, reaction)
   
     if old_pos != player.position:
       player_to_update.add(player)
@@ -263,71 +273,6 @@ async def update_screens(player, camera):
           
           await camera_info["message"].edit(
             f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {player.get_turn_str()}```")
-          
-
-async def shop(player, reaction):
-
-  shop_position = player.is_shop_near()
-  
-  if not shop_position is None:
-      if not player.is_in_shop:
-        # add reaction to enter shop
-        await reaction.message.add_reaction("🛒")
-        player.is_in_shop = True
-      elif str(reaction) == "🛒":
-        
-        #execute shop
-
-        # get channels, message, chat info
-        channel = reaction.message.channel
-        screen = open_rooms[channel]["screen"]
-        chat = open_rooms[channel]["chat"]
-
-        shop = st.Shop(shop_position)
-        articles = shop.define_articles()
-        text = "---Shop---\n"
-        inventory = player.inventory.copy()
-        print(inventory)
-        for article in articles:
-          char = settings.BLOCKS[article]["char"]
-          char = "\*" if char == "*" else char
-          sentence =  f"-{char} {article} : {articles[article]} coins"
-
-          if article in inventory:
-            # if object is in inventory
-            sentence += f", you have {inventory[article]}"
-            sentence = "**" + sentence + "**"
-          else:
-            # unable to buy
-            sentence = "*" + sentence + "*"
-          sentence += "\n"
-          text += sentence
-        
-        # check if inventory is empty
-        if inventory == {}:
-          text += "..."
-        
-        shop_message = await chat.send(text)
-
-        open_rooms[channel]["shop_message"] = shop_message
-
-        # remove controls so player can't move
-        CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
-        for emoji in CONTROLS:
-          await screen.remove_reaction(emoji, bot.user)
-
-        list = (
-          (":one:"), (":two:"), (":three:"), (":four:"), (":five:"), (":six:"), (":seven:"), (":eight:"), (":nine:"), (":keycap_ten:")
-        )
-
-        
-        for emoji, article in zip(list, articles):
-          if article in inventory: 
-            await shop_message.add_reaction(emoji)
-            
-  else:
-    player.is_in_shop = False
-    
 
 
 async def add_reactions(message):
@@ -335,5 +280,9 @@ async def add_reactions(message):
   for emoji in CONTROLS:
     await message.add_reaction(emoji)
 
+
+@bot.command()
+async def sell(ctx, amount):
+  pass
 
 bot.run(TOKEN)
