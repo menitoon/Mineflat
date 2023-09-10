@@ -20,7 +20,11 @@ class PlayerLoader:
       "y" : random.randint(-3, 3) * PERLIN_SIZE[1]
     }
 
-    data = {"position" : position, "inventory": {}}
+    data = {
+      "position" : position,
+      "inventory": {},
+      "coin" : 0
+    }
     # write data
     file = open(f"PlayerData/{owner}.txt", "wb")
     pickle.dump(data, file)
@@ -33,7 +37,8 @@ class PlayerLoader:
   def save_data(owner):
     data = {
         "position" : owner.position,
-        "inventory" : owner.inventory
+        "inventory" : owner.inventory,
+        "coin" : owner.coin
       }
     
     file = open(f"PlayerData/{owner.name}.txt", "wb")
@@ -56,8 +61,9 @@ class PlayerLoader:
     # get position from data file
     position = data["position"]
     inventory = data["inventory"]
+    coin = data["coin"]
 
-    print(inventory,": Inventory")
+    print(data, owner)
     
     # create camera
 
@@ -71,7 +77,7 @@ class PlayerLoader:
                      )
      
     # create player
-    player = Player(canvas, "@", position, owner, camera, inventory, layer=2)
+    player = Player(canvas, "@", position, owner, camera, inventory, coin, layer=2)
     # add reference / camera to returned data (not saved/writen)
     data["reference"] = player
     data["camera"] = camera

@@ -5,7 +5,7 @@ import oz_engine as oz
 import custom_class as cc
 import Structures as st
 import settings
-import game_commands as cd
+import Commands as cd
 from keep_alive import keep_alive
 
 import random as rng
@@ -45,7 +45,7 @@ player_to_update = set()
 
 canvas = oz.Canvas(" ")
 cc.canvas = canvas
-commands = cd.GameCommands(open_rooms)
+commands = cd.ShopCommands(open_rooms)
 chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5)
 #chunk_loader.reset_data()
 
@@ -208,7 +208,7 @@ async def on_reaction_add(reaction, user):
     player = open_rooms[channel]["player"]
 
     if player.is_in_shop:
-      await handle_shop_transaction(reaction, channel)
+      await commands.handle_shop_transaction(reaction, user, channel)
     else:
       await act(reaction)
 
@@ -218,11 +218,13 @@ async def act(reaction):
     player = open_rooms[channel]["player"]
     camera = open_rooms[channel]["camera"]
     author = open_rooms[channel]["author"]
+
     
     await reaction.remove(author)
 
     s_reaction = str(reaction)
     old_pos = player.position.copy()
+    was_near = player.is_shop_near()
     player.move(s_reaction)
 
     need_update = False
@@ -244,10 +246,17 @@ async def act(reaction):
         return
 
     await commands.shop(player, reaction)
-  
+    
     if old_pos != player.position:
       player_to_update.add(player)
       chunk_loader.load_and_unload_chunks(old_pos, player.position, author)
+      if was_near and (not player.is_shop_near()):
+        # if no longer near a shop remove that reaction
+        screen = open_rooms[channel]["screen"]
+        player.is_near_shop = False
+        await screen.remove_reaction("🛒", bot.user)
+        
+      
     elif not need_update:
       #nothing todo
       return
@@ -283,6 +292,6 @@ async def add_reactions(message):
 
 @bot.command()
 async def sell(ctx, amount):
-  pass
+  await commands.sell(ctx, amount)
 
 bot.run(TOKEN)

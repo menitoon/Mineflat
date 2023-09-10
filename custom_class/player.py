@@ -3,11 +3,11 @@ import custom_class as cc
 
 class Player(oz.Sprite):
 
-    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop"
+    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop", "coin"
 
     def __init__(
       self, canvas_owner, char : str, position : dict,
-      name : str, camera, inventory, group=[], layer : int=0
+      name : str, camera, inventory, coin, group=[], layer : int=0
     ):
 
         self.register_info(canvas_owner, char, position, name, group, layer)
@@ -19,6 +19,7 @@ class Player(oz.Sprite):
         self.inventory = inventory
         self.is_near_shop = False
         self.is_in_shop = False
+        self.coin = coin
     
     def move(self, action : str):
 
