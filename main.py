@@ -292,6 +292,19 @@ async def add_reactions(message):
 
 @bot.command()
 async def sell(ctx, amount):
+  if str(ctx.channel.parent) != "Chat":
+    return
   await commands.sell(ctx, amount)
+
+@bot.command()
+async def coins(ctx):
+  channel = ctx.channel.parent
+  if str(channel) != "Chat":
+    return
+  await commands.show_coin(channel)
+
+@bot.command()
+async def leader(ctx):
+  await commands.leaderboard(ctx)
 
 bot.run(TOKEN)

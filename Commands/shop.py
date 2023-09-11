@@ -1,6 +1,8 @@
 import discord
 import Structures as st
 import settings
+import custom_class as cc
+import os
 
 NUMBERS = (
           ("1️⃣"), ("2️⃣"), ("3️⃣"), ("4️⃣"), ("5️⃣"), ("6️⃣"), ("7️⃣"), ("8️⃣"), ("9️⃣"), ("🔟")
@@ -88,8 +90,7 @@ class ShopCommands:
     articles = self.open_rooms[channel]["shop_article"]
     
     if type is None:
-      print("Nothing is selected u dumb ass !")
-      self.close(channel, player)
+      await chat.send("⚠️ Please select a proper article to sell !")
       return
 
     amount = int(amount)
@@ -123,4 +124,41 @@ class ShopCommands:
     del self.open_rooms[channel]["shop"]
     self.open_rooms[channel].pop("article_selected", None)
     del self.open_rooms[channel]["shop_article"]
-  
+
+
+  async def show_coin(self, channel):
+    chat = self.open_rooms[channel]["chat"]
+    player = self.open_rooms[channel]["player"]
+    if player.coin > 1:
+      await chat.send(f"You have {player.coin} coin 🪙")
+    else:
+      await chat.send(f"You have {player.coin} coins 🪙")
+
+
+  async def leaderboard(self, ctx):
+
+    chat = ctx.channel
+    if str(chat) != "Chat":
+      print(str(chat), "OOF")
+      return
+    
+    leader = {}
+    
+    for player_file in os.listdir("PlayerData"):
+      len_file = len(player_file)
+      player_name = player_file[0 : len_file - 4]
+      coin = cc.PlayerLoader.load_data(player_name)["coin"]
+      leader[player_name] = coin
+      
+    
+    leader =  sorted( leader.items(), key=lambda item : item[1], reverse=True)
+
+    text = "---Leaderboard--\n"
+    place = 1
+    for player_name, coin in leader:
+      text += f"**#{place} {player_name} : {coin}🪙**\n"
+      place += 1
+
+    await chat.send(text)
+
+      

@@ -137,9 +137,12 @@ class Player(oz.Sprite):
         reach_left -= 1
     
 
-      if len(block_selected) == 0:
+      if len(block_selected) == 0 or "no-mine" in block_selected[0].groups:
+        # if no block to mine
+        # or block can't be mined 
+        # don't mine
         return
-  
+
       chunk_id = chunk_loader.get_chunk_id(block_pos)
       chunk_loader.chunk_to_update.add(chunk_id)
       block_selected = self.canvas_owner.get_sprite(block_selected[0])
