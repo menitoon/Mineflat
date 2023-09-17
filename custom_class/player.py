@@ -1,9 +1,10 @@
 import oz_engine as oz
 import custom_class as cc
+from settings import BLOCKS
 
 class Player(oz.Sprite):
 
-    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop", "coin"
+    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop", "coin", "block_in_hand"
 
     def __init__(
       self, canvas_owner, char : str, position : dict,
@@ -20,6 +21,7 @@ class Player(oz.Sprite):
         self.is_near_shop = False
         self.is_in_shop = False
         self.coin = coin
+        self.block_in_hand = "air"
     
     def move(self, action : str):
 
@@ -60,7 +62,8 @@ class Player(oz.Sprite):
 
     def is_shop_near(self):
       surrondings = (
-        (-1, 0), (1, 0), (0, 1), (0, -1)
+        (-1, 0), (1, 0), (0, 1), (0, -1),
+        (-1, 1), (1, 1), (-1, -1), (1, -1)
       )
 
       for around_position in surrondings:
@@ -105,6 +108,9 @@ class Player(oz.Sprite):
 
 
     def build(self, chunk_loader):
+
+      if self.block_in_hand == "air" or not self.block_in_hand in self.inventory:
+        return
     
       build_destination = {
         "x": self.position["x"] + self.direction["x"],
@@ -117,10 +123,23 @@ class Player(oz.Sprite):
         # if there is a block return
         return False
 
-  
-      chunk_id = chunk_loader.get_chunk_id(build_destination)
-      block = cc.Block(self.canvas_owner, "█", build_destination, "stone", "stone")
+      chunk_id = chunk_loader.get_chunk_id(build_destination)  
+      # get block chosen to build
+      block_type_placed = self.block_in_hand
+      # get char of block chosen
+      block_type_str = BLOCKS[block_type_placed]["char"]
+      # groups
+      block_type_groups = BLOCKS[block_type_placed]["group"]
+      
+      # place block in canvas data
+      block = cc.Block(self.canvas_owner, block_type_str, build_destination, block_type_placed, block_type_placed, groups=block_type_groups)
       chunk_loader.chunk_loaded[chunk_id]["data"].add(block)
+      chunk_loader.chunk_to_update.add(chunk_id)
+      # remove 1 block from inventory
+      self.inventory[block_type_placed] -= 1
+      if self.inventory[block_type_placed] == 0:
+        # if no block left remove key from inventory
+        del self.inventory[block_type_placed]
       return True
 
 
@@ -135,17 +154,21 @@ class Player(oz.Sprite):
         block_pos["y"] += self.direction["y"]
         block_selected = self.canvas_owner.get_elements(block_pos)
         reach_left -= 1
-    
 
-      if len(block_selected) == 0 or "no-mine" in block_selected[0].groups:
+       
+      
+      if len(block_selected) == 0:
         # if no block to mine
-        # or block can't be mined 
         # don't mine
         return
-
+      
+      block_selected = self.canvas_owner.get_sprite(block_selected[0])
+      if "no-mine" in block_selected.groups:
+        # block can't be mined
+        return
+      
       chunk_id = chunk_loader.get_chunk_id(block_pos)
       chunk_loader.chunk_to_update.add(chunk_id)
-      block_selected = self.canvas_owner.get_sprite(block_selected[0])
       player_to_update.add(self)
       block_type = block_selected.block_id
       chunk_loader.chunk_loaded[chunk_id]["data"].remove(block_selected)

@@ -45,7 +45,7 @@ class Shop:
 
   def get_article_sentence(self, articles, player):
   
-    text = "---Shop---\n"
+    text = "# Shop\n"
     inventory = player.inventory
     has_item = []
     index_place = 0
@@ -69,10 +69,7 @@ class Shop:
       sentence += "\n"
       text += sentence
         
-      # check if inventory is empty
-      if inventory == {}:
-          text += "..."
-
+    
     return {
       "text" : text,
       "has_item" : has_item

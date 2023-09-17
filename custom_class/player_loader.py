@@ -20,6 +20,7 @@ class PlayerLoader:
       "y" : random.randint(-3, 3) * PERLIN_SIZE[1]
     }
 
+
     data = {
       "position" : position,
       "inventory": {},

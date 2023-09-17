@@ -80,7 +80,7 @@ class ShopCommands:
         await reaction.remove(user)
         break
 
-  async def sell(self, ctx, amount):
+  async def sell(self, ctx, amount, player_to_update):
 
     chat = ctx.channel
     channel = chat.parent
@@ -102,7 +102,8 @@ class ShopCommands:
     else:
       # if can buy
       player.inventory[type] -= amount
-      player.coin += articles[type]
+      player.coin += articles[type] * amount
+      player_to_update.add(player)
       if player.inventory[type] == 0:
         del player.inventory[type]
       
@@ -135,11 +136,10 @@ class ShopCommands:
       await chat.send(f"You have {player.coin} coins 🪙")
 
 
-  async def leaderboard(self, ctx):
+  async def leaderboard(self, ctx, players, canvas):
 
     chat = ctx.channel
     if str(chat) != "Chat":
-      print(str(chat), "OOF")
       return
     
     leader = {}
@@ -147,13 +147,16 @@ class ShopCommands:
     for player_file in os.listdir("PlayerData"):
       len_file = len(player_file)
       player_name = player_file[0 : len_file - 4]
-      coin = cc.PlayerLoader.load_data(player_name)["coin"]
+      if player_name in players:
+        coin = canvas.get_sprite(player_name).coin
+      else:
+        coin = cc.PlayerLoader.load_data(player_name)["coin"]
       leader[player_name] = coin
       
     
     leader =  sorted( leader.items(), key=lambda item : item[1], reverse=True)
 
-    text = "---Leaderboard--\n"
+    text = "# Leaderboard\n"
     place = 1
     for player_name, coin in leader:
       text += f"**#{place} {player_name} : {coin}🪙**\n"

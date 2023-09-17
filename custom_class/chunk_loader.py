@@ -5,6 +5,7 @@ from perlin import PerlinNoise
 from .block import Block
 from .generation import *
 from settings import *
+from .player_loader import *
 
 SIZE = settings.PERLIN_SIZE
 
@@ -22,9 +23,10 @@ class ChunkLoader:
         self.chunk_to_update = set()
         self.canvas_owner = canvas_owner
 
-    
-  
     def load_surroundings(self, position : dict, author):
+
+      self.perlin.SEED = get_seed()
+      
       surroundings = (
           (0, 0), (-1, 0), (-1, 1), (0, 1),
           (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)
@@ -36,6 +38,18 @@ class ChunkLoader:
         chunk_load = (pos[0] + chunk_id[0], pos[1] + chunk_id[1])
         self.load_chunk(chunk_load ,author)
 
+    def unload_surroundings(self, position : dict, author):
+      surroundings = (
+          (0, 0), (-1, 0), (-1, 1), (0, 1),
+          (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)
+        )
+
+      chunk_id = self.get_chunk_id(position)
+      
+      for pos in surroundings:
+        chunk_load = (pos[0] + chunk_id[0], pos[1] + chunk_id[1])
+        self.unload_chunk(chunk_load ,author)
+
     def get_chunk_id(self, position : dict):
       return (
         math.floor(position["x"] / self.size[0]), 
@@ -45,7 +59,6 @@ class ChunkLoader:
     
     def add_block(self, block_info, position : dict):
 
-      
       # define block type
       char = block_info["char"]
       name_type = block_info["name"]
@@ -114,7 +127,7 @@ class ChunkLoader:
     def unload_chunk(self, chunk_id, author):
 
         self.chunk_loaded[chunk_id]["players"].remove(author)
-      
+        
         if len(self.chunk_loaded[chunk_id]["players"]) > 0:
           return
               
@@ -204,8 +217,7 @@ class ChunkLoader:
     def generate_chunk(self, position : list):
       
         amount = 0
-       
-      
+        
         chunk_position = (
           position[0] * self.size[0], position[1] * self.size[1]
         )
@@ -263,7 +275,6 @@ class ChunkLoader:
         os.remove(f"Chunks/{f}")
       for d in os.listdir("PlayerData"):
         os.remove(f"PlayerData/{d}")
-        
 
       
     def save_chunk(self, chunk_id):
@@ -333,3 +344,23 @@ class ChunkLoader:
       file_chunk = open(f"Chunks/{chunk_id[0]},{chunk_id[1]}.txt", "w")
       file_chunk.write(save_chunk)
       file_chunk.close()
+
+
+    def get_nearby_players(self, player, players):
+      chunk_id = self.get_chunk_id(player.position)
+      player_in_chunk = self.chunk_loaded[chunk_id]["players"].copy()
+
+      nearby_players = set()
+      players_to_check = players.copy()
+      players_to_check.remove(player.name)
+     
+      for player_check in players_to_check:
+        player_ref = self.canvas_owner.get_sprite(player_check)
+        list_position_check = (player_ref.position["x"], player_ref.position["y"])
+        list_position_player = (player.position["x"], player.position["y"])
+        distance = math.dist(list_position_check, list_position_player)
+        if distance <= MAX_DISTANCE_NEARBY:
+          nearby_players.add(player_ref)
+      
+          
+      return nearby_players
