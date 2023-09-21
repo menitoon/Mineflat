@@ -5,14 +5,30 @@ SEED = get_seed()
 
 class Generation:
   @staticmethod
-  def define_block(value : float, position : tuple):
+  def define_block(value : float,
+                   value_plant : float,
+                   position : tuple):
 
       if value >= STONE[0] and value <= STONE[1]:
         return Generation.solid_block(value, position)
       else:
         # pass
-        return Generation.shop(value, position)
+        return Generation.air_block(value, value_plant, position)
 
+  @staticmethod
+  def air_block(value, value_plant, position):
+    output = Generation.shop(value, position)
+    if output is None:
+      output = Generation.plant(value, value_plant, position)
+    return output
+
+  @staticmethod
+  def plant(value, value_plant, position):
+    if value_plant >= PLANT[0] and value_plant <= PLANT[1]:
+      print(f"PLACE at {position}")
+      return BLOCKS["plant_grown"]
+      
+  
   @staticmethod
   def solid_block(value : float, position : tuple):
     
@@ -53,11 +69,9 @@ class Generation:
   def shop(value : float, position : tuple):
     if value >= SHOP["range"][0] and value <= SHOP["range"][1]:
 
-      
-      
       # possible place to generate
       random.seed((position[0] + SEED, position[1] + SEED))
-
+      
       if random.random() <= SHOP["proba"]:
         # place it
         return BLOCKS["shop"]

@@ -30,7 +30,7 @@ class AdminCommands:
       
     return True
 
-
+  @staticmethod
   def clip(player):
     player.clip = not player.clip
     if player.clip:
@@ -41,3 +41,9 @@ class AdminCommands:
       # if can't clip
       # so set off
       return '```Clip proprety set to False```'
+
+
+  @staticmethod
+  def set_move_unit(player, unit : int):
+    player.move_unit = unit
+    return f"```{player.name}'s move unit set to {unit}```"

@@ -70,7 +70,6 @@ class ShopCommands:
       self.close(channel)
       player = self.open_rooms[channel]["player"]
       player.is_in_shop = False
-      await reaction.message.delete()
       return
     
     for number, article in zip(NUMBERS, articles):
@@ -126,21 +125,25 @@ class ShopCommands:
     self.open_rooms[channel].pop("article_selected", None)
     del self.open_rooms[channel]["shop_article"]
 
+  @staticmethod
+  def show_coin(player : str, players, canvas):
 
-  async def show_coin(self, channel):
-    chat = self.open_rooms[channel]["chat"]
-    player = self.open_rooms[channel]["player"]
-    if player.coin > 1:
-      await chat.send(f"You have {player.coin} coin 🪙")
+    coin = 0
+    
+    if player in players:
+      coin = canvas.get_sprite(player).coin
     else:
-      await chat.send(f"You have {player.coin} coins 🪙")
+      coin = cc.PlayerLoader.load_data(player)["coin"]
+      
+    if coin > 1:
+      return (f"You have {coin} coin 🪙")
+    else:
+      return (f"You have {coin} coins 🪙")
 
 
   async def leaderboard(self, ctx, players, canvas):
 
     chat = ctx.channel
-    if str(chat) != "Chat":
-      return
     
     leader = {}
     

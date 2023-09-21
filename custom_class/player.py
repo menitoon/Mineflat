@@ -4,7 +4,7 @@ from settings import BLOCKS
 
 class Player(oz.Sprite):
 
-    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop", "coin", "block_in_hand"
+    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop", "coin", "block_in_hand", "clip", "move_unit"
 
     def __init__(
       self, canvas_owner, char : str, position : dict,
@@ -22,6 +22,8 @@ class Player(oz.Sprite):
         self.is_in_shop = False
         self.coin = coin
         self.block_in_hand = "air"
+        self.clip = False
+        self.move_unit = 1
     
     def move(self, action : str):
 
@@ -31,34 +33,34 @@ class Player(oz.Sprite):
         if action == "🔼":
             
             if not "wall" in self.get_colliding_groups(
-              {"x": self.position["x"], "y": self.position["y"] - 1}
-            ):
-                self.camera.change_y(-1)
-                self.change_y(-1)
+              {"x": self.position["x"], "y": self.position["y"] - self.move_unit}
+            ) or self.clip:
+                self.camera.change_y(-self.move_unit)
+                self.change_y(-self.move_unit)
                 
 
         elif action == "🔽":
             if not "wall" in self.get_colliding_groups(
-              {"x": self.position["x"], "y": self.position["y"] + 1}
-            ):
-                self.camera.change_y(1)
-                self.change_y(1)
+              {"x": self.position["x"], "y": self.position["y"] + self.move_unit}
+            ) or self.clip:
+                self.camera.change_y(self.move_unit)
+                self.change_y(self.move_unit)
                 
 
         elif action == "◀":
             if not "wall" in self.get_colliding_groups(
-              {"x": self.position["x"] - 1, "y": self.position["y"]}
-            ):
-                self.camera.change_x(-1)
-                self.change_x(-1)
+              {"x": self.position["x"] - self.move_unit, "y": self.position["y"]}
+            ) or self.clip:
+                self.camera.change_x(-self.move_unit)
+                self.change_x(-self.move_unit)
                 
 
         elif action == "▶":
             if not "wall" in self.get_colliding_groups(
-              {"x": self.position["x"] + 1, "y": self.position["y"]}
-            ):
-                self.camera.change_x(1)
-                self.change_x(1)
+              {"x": self.position["x"] + self.move_unit, "y": self.position["y"]}
+            ) or self.clip:
+                self.camera.change_x(self.move_unit)
+                self.change_x(self.move_unit)
 
     def is_shop_near(self):
       surrondings = (

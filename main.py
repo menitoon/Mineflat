@@ -6,7 +6,7 @@ import custom_class as cc
 import Structures as st
 import settings
 import Commands as cd
-from keep_alive import keep_alive
+
 
 import random as rng
 import math
@@ -18,7 +18,7 @@ import pickle
 import time
 
 
-keep_alive()
+
 TOKEN = os.environ["TOKEN"] 
 intents = discord.Intents.default()
 intents.typing = True  
@@ -353,10 +353,12 @@ async def sell(ctx, amount):
 @bot.command()
 async def coin(ctx):
   chat = ctx.channel
-  if str(chat) != "Chat":
-    return
-  channel = chat.parent
-  await commands.show_coin(channel)
+  if str(chat) == "Chat":
+    channel = chat.parent
+  else:
+    channel = chat
+    
+  await chat.send(commands.show_coin(str(ctx.author), players, canvas))
 
 @bot.command()
 async def leader(ctx):
@@ -428,5 +430,26 @@ async def get_help(ctx):
   if str(ctx.channel) != "Chat":
     return
   await ctx.channel.send(cd.help_message)
+
+@bot.command()
+async def clip(ctx):
+  chat = ctx.channel 
+  if str(chat) != "Chat" or not ctx.author.guild_permissions.administrator:
+    return
+  channel = ctx.channel.parent
+  player = open_rooms[channel]["player"]
+  
+  await chat.send(cd.AdminCommands.clip(player))
+
+@bot.command()
+async def set_move(ctx, unit):
+  chat = ctx.channel 
+  if str(chat) != "Chat" or not ctx.author.guild_permissions.administrator:
+    return
+  channel = ctx.channel.parent
+  player = open_rooms[channel]["player"]
+  
+  await chat.send(cd.AdminCommands.set_move_unit(player, int(unit)))
+
 
 bot.run(TOKEN)

@@ -9,16 +9,18 @@ from .player_loader import *
 
 SIZE = settings.PERLIN_SIZE
 
+
 class ChunkLoader:
-    __slots__ = "size", "chunk_loaded" , "chunk_to_update", "canvas_owner", "fractal", "perlin"
+    __slots__ = "size", "chunk_loaded" , "chunk_to_update", "canvas_owner", "fractal", "perlin", "perlin_plant"
   
     def __init__(self, canvas_owner, size : tuple, fractal : int):
         self.size = size
         # contains all different perlin noise
         self.perlin = PerlinNoise(SIZE)
         self.perlin.SEED = get_seed()
+        self.perlin_plant = PerlinNoise(settings.PLANT_SIZE)
+        self.perlin_plant.SEED = get_seed() / 2
        
-        
         self.chunk_loaded = {}
         self.chunk_to_update = set()
         self.canvas_owner = canvas_owner
@@ -130,7 +132,12 @@ class ChunkLoader:
         
         if len(self.chunk_loaded[chunk_id]["players"]) > 0:
           return
-              
+
+        # if chunk needs a save, save it before destroying it
+        if chunk_id in self.chunk_to_update:
+          self.save_chunk(chunk_id)
+          self.chunk_to_update.remove(chunk_id)
+      
         for b in self.chunk_loaded[chunk_id]["data"]:
             b.kill()
 
@@ -139,8 +146,6 @@ class ChunkLoader:
       
     def read_chunk(self, path, position):
 
-      print(path)
-      
       # Get chunk data from path
       chunk_data = open(path, "r")
       chunk_position = (position[0] * self.size[0], position[1] * self.size[1])
@@ -226,8 +231,9 @@ class ChunkLoader:
         last_block = ""
         new_block = ""
         block_counter = -1
-
-        new_block = Generation.define_block(self.perlin.get_perlin_at(chunk_position), chunk_position)
+        world_noise = self.perlin.get_perlin_at(chunk_position)
+        plant_noise = self.perlin_plant.get_perlin_at(chunk_position)
+        new_block = Generation.define_block(world_noise, plant_noise , chunk_position)
         # check if is air block
         new_block = "air" if new_block is None else new_block["name"]
         last_block = new_block
@@ -244,8 +250,9 @@ class ChunkLoader:
                 
                 last_block = new_block
 
-                value = self.perlin.get_perlin_at(pos_placement)
-                block_info = Generation.define_block(value, pos_placement)
+                world_noise = self.perlin.get_perlin_at(pos_placement)
+                plant_noise = self.perlin_plant.get_perlin_at(pos_placement)
+                block_info = Generation.define_block(world_noise, plant_noise ,pos_placement)
                 if not block_info is None:
                   # solid block
                   pos_dict = {"x" : pos_placement[0], "y" : pos_placement[1]}

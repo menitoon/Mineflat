@@ -1,1 +1,0 @@
-25stone;2iron;22stone;1coal;16stone;1iron;9stone;1iron;6stone;1coal;14stone;1iron;9stone;1iron;12stone;1coal;8stone;2coal;4stone;2air;1stone;3coal;22stone;10air;9stone;1coal;2iron;9stone;13air;17stone;16air;1stone;3coal;3stone;1iron;7stone;19air;11stone;24air;5stone;63air;1shop;36air;

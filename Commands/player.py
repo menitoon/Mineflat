@@ -54,7 +54,7 @@ class PlayerCommands:
     text = "# Inventory\n"
     
     for item, amount in inventory.items():
-      text += f"-{item} {BLOCKS[item]['char']} : {amount}\n"
+      text += f"🞄 {item} {BLOCKS[item]['char']} : {amount}\n"
 
     if inventory == {}:
       text += "**-empty**"

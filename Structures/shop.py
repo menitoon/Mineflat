@@ -53,7 +53,7 @@ class Shop:
     for article in articles:
       char = BLOCKS[article]["char"]
       char = "\*" if char == "*" else char
-      sentence =  f"-{char} {article} : {articles[article]} coins"
+      sentence =  f"🞄 {char} {article} : {articles[article]} coins"
 
       if article in inventory:
         # if object is in inventory
@@ -68,7 +68,8 @@ class Shop:
       index_place += 1
       sentence += "\n"
       text += sentence
-        
+
+    text += f"\n🞄 id : ({self.position['x']},{self.position['y']})"
     
     return {
       "text" : text,

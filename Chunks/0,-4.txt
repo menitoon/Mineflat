@@ -1,1 +1,1 @@
-148air;5stone;23air;12stone;18air;10stone;1coal;4stone;15air;12stone;2iron;4stone;2air;4stone;5air;26stone;1coal;13stone;1iron;2stone;1coal;24stone;1iron;2stone;2coal;5stone;1iron;21stone;1diamond;7stone;1coal;1stone;2iron;18stone;1coal;1stone;1diamond;7stone;1coal;2stone;1iron;6stone;
+6air;16stone;2coal;1stone;1iron;6stone;10air;3stone;1diamond;1stone;3coal;14stone;12air;20stone;14air;18stone;16air;16stone;19air;13stone;22air;10stone;31air;9stone;24air;5stone;1coal;4stone;1iron;1stone;20air;5stone;1coal;7stone;19air;14stone;18air;2stone;1coal;3stone;1iron;8stone;16air;
