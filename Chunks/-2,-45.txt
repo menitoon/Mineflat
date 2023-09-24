@@ -1,1 +1,0 @@
-4stone;13air;1stone;1coal;15stone;17air;13stone;21air;11stone;22air;9stone;10air;2plant_grown;14air;4stone;13air;2plant_grown;7air;1shop;22air;2plant_grown;174air;3stone;3air;1stone;22air;8stone;

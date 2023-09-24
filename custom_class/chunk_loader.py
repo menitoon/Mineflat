@@ -6,12 +6,12 @@ from .block import Block
 from .generation import *
 from settings import *
 from .player_loader import *
+import SpecialBlock as sb
 
 SIZE = settings.PERLIN_SIZE
 
-
 class ChunkLoader:
-    __slots__ = "size", "chunk_loaded" , "chunk_to_update", "canvas_owner", "fractal", "perlin", "perlin_plant"
+    __slots__ = "size", "chunk_loaded" , "chunk_to_update", "canvas_owner", "fractal", "perlin", "perlin_plant", "entity_to_update"
   
     def __init__(self, canvas_owner, size : tuple, fractal : int):
         self.size = size
@@ -23,6 +23,7 @@ class ChunkLoader:
        
         self.chunk_loaded = {}
         self.chunk_to_update = set()
+        self.entity_to_update = set()
         self.canvas_owner = canvas_owner
 
     def load_surroundings(self, position : dict, author):
@@ -60,17 +61,24 @@ class ChunkLoader:
   
     
     def add_block(self, block_info, position : dict):
-
+      
       # define block type
       char = block_info["char"]
       name_type = block_info["name"]
       group = block_info["group"]
-  
-      block = Block(self.canvas_owner, char, position, name_type, name_type, groups=group)
 
-      # add data to chunk
-      chunk_id = self.get_chunk_id(position)
-      self.chunk_loaded[chunk_id]["data"].add(block)
+      # define which class to read from
+      class_entity = {
+        "seed" : sb.Seed
+      }
+      
+      if "entity" in group:
+        # entity
+        block = class_entity[name_type](self.canvas_owner, char, position, name_type, name_type, self , groups=group)
+      else:
+        # regular block
+        block = Block(self.canvas_owner, char, position, name_type, name_type, self, groups=group)
+
 
   
     def load_and_unload_chunks(self, pos : dict, new_pos : dict, author):
@@ -308,12 +316,10 @@ class ChunkLoader:
       if len(block) != 0:
           for b in block:
             block_save = self.canvas_owner.get_sprite(b)
-            if  isinstance(block_save, Block):
+            if isinstance(block_save, Block):
               new_block = block_save.block_id
               
             
-            
-      
       last_block = new_block
       
       for y in range(self.size[1]):
@@ -351,7 +357,7 @@ class ChunkLoader:
       file_chunk = open(f"Chunks/{chunk_id[0]},{chunk_id[1]}.txt", "w")
       file_chunk.write(save_chunk)
       file_chunk.close()
-
+      
 
     def get_nearby_players(self, player, players):
       chunk_id = self.get_chunk_id(player.position)
@@ -371,3 +377,7 @@ class ChunkLoader:
       
           
       return nearby_players
+
+    def update_entity(self, time_in_game):
+      for entity in self.entity_to_update:
+        entity.update(time_in_game)

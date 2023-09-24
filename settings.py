@@ -1,7 +1,6 @@
 import os
 import random
 
-
 def get_seed():
   if os.path.isfile("Chunks/seed.txt"):
     SEED = float(open("Chunks/seed.txt", "r").read())
@@ -15,12 +14,13 @@ def get_seed():
     return SEED
 
 PERLIN_SIZE = (30, 15)
-PLANT_SIZE = (15, 15)
+PLANT_SIZE = (25, 15)
 CANVAS_SIZE = (32, 13)
 
 SERVER_ID = "Mineflat"
 MAX_DISTANCE_NEARBY = 25.0
 
+TIME_GROW = (5, 20)
 
 BLOCKS = {
   "stone": {"name": "stone", "char": "█", "group" :["wall"]},
@@ -28,7 +28,8 @@ BLOCKS = {
   "diamond" : {"name": "diamond" ,"char": "✦", "group" : ["wall"]},
   "coal" : {"name": "coal" ,"char": "#", "group" : ["wall"]},
   "shop" : {"name" : "shop", "char": "$", "group" : ["wall", "shop", "no-mine"]},
-  "plant_grown" : {"name" : "plant_grown", "char" : "♣", "group": []}
+  "plant_grown" : {"name" : "plant_grown", "char" : "♣", "group": [], "drop": {"seed" : (2, 3)}},
+  "seed" : {"name" : "seed", "char" : ".", "group": ["entity"]}
 }
 
 

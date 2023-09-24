@@ -1,1 +1,0 @@
-1stone;31air;2stone;30air;2stone;30air;3stone;18air;1plant_grown;10air;4stone;17air;2plant_grown;9air;5stone;15air;2plant_grown;10air;6stone;15air;1plant_grown;10air;7stone;25air;1stone;1coal;7stone;23air;10stone;22air;12stone;20air;13stone;19air;3stone;1iron;7stone;1coal;3stone;16air;

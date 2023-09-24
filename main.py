@@ -6,7 +6,7 @@ import custom_class as cc
 import Structures as st
 import settings
 import Commands as cd
-
+from keep_alive import keep_alive
 
 import random as rng
 import math
@@ -17,8 +17,6 @@ import random
 import pickle
 import time
 
-
-
 TOKEN = os.environ["TOKEN"] 
 intents = discord.Intents.default()
 intents.typing = True  
@@ -28,14 +26,10 @@ intents.messages = True
 intents.reactions = True
 intents.message_content = True
 
-player_count = 0
-
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 open_rooms = {}
 camera_room = {}
-players = set()
-
 
 CATEGORY_ROOM = "Game-Rooms"
 TIMEOUT_LIMIT = 300 # in seconds
@@ -43,13 +37,20 @@ TIMEOUT_LIMIT = 300 # in seconds
 SIZE_X = settings.CANVAS_SIZE[0]
 SIZE_Y = settings.CANVAS_SIZE[1]
 
+player_count = 0
+players = set()
 player_to_update = set()
+time_since = time.time()
+time_in_game = 0
+entity_to_update = set()
 
 canvas = oz.Canvas(" ")
 cc.canvas = canvas
 commands = cd.ShopCommands(open_rooms)
 chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5)
 #chunk_loader.reset_data()
+keep_alive()
+
 
 
 @bot.event
@@ -94,6 +95,8 @@ async def start(ctx):
     if str_author in players:
       return
     print(str_author)
+    if players == set():
+      time_since = time.time()
     players.add(str_author)
     print(players, "LIST")
     player_count += 1
@@ -182,7 +185,6 @@ async def close(channel):
   # unload chunks that are loaded by no one
   
   chunk_loader.unload_surroundings(player.position, author)
-  player.camera.kill()
   player.kill()
 
   await update_check()
@@ -201,10 +203,13 @@ async def check_inactivity():
       
       if time_since_message.total_seconds() >= TIMEOUT_LIMIT:
         await close(channel)
-        
+
+
+
 @tasks.loop(seconds=10)
 async def update_check():
   global player_to_update
+  global time_in_game
   
   for chunk in chunk_loader.chunk_to_update:
     chunk_loader.save_chunk(chunk)
@@ -216,6 +221,11 @@ async def update_check():
     cc.PlayerLoader.save_data(player)
     print(player, "TO UPDATE")
   player_to_update = set()
+
+  if players != set():
+    time_in_game = time.time() - time_since
+
+  chunk_loader.update_entity(time_in_game)
 
 @bot.command()
 async def reset(ctx):
@@ -342,7 +352,6 @@ async def add_reactions(message):
   CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
   for emoji in CONTROLS:
     await message.add_reaction(emoji)
-
 
 @bot.command()
 async def sell(ctx, amount):

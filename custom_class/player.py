@@ -1,6 +1,7 @@
 import oz_engine as oz
 import custom_class as cc
 from settings import BLOCKS
+import random
 
 class Player(oz.Sprite):
 
@@ -124,7 +125,7 @@ class Player(oz.Sprite):
       if block_destination != []:
         # if there is a block return
         return False
-
+      
       chunk_id = chunk_loader.get_chunk_id(build_destination)  
       # get block chosen to build
       block_type_placed = self.block_in_hand
@@ -134,16 +135,14 @@ class Player(oz.Sprite):
       block_type_groups = BLOCKS[block_type_placed]["group"]
       
       # place block in canvas data
-      block = cc.Block(self.canvas_owner, block_type_str, build_destination, block_type_placed, block_type_placed, groups=block_type_groups)
-      chunk_loader.chunk_loaded[chunk_id]["data"].add(block)
-      chunk_loader.chunk_to_update.add(chunk_id)
+      block = cc.Block(self.canvas_owner, block_type_str, build_destination, block_type_placed, block_type_placed, chunk_loader, groups=block_type_groups)
+
       # remove 1 block from inventory
       self.inventory[block_type_placed] -= 1
       if self.inventory[block_type_placed] == 0:
         # if no block left remove key from inventory
         del self.inventory[block_type_placed]
       return True
-
 
 
     def mine(self, chunk_loader, player_to_update):
@@ -157,23 +156,36 @@ class Player(oz.Sprite):
         block_selected = self.canvas_owner.get_elements(block_pos)
         reach_left -= 1
 
-       
-      
       if len(block_selected) == 0:
         # if no block to mine
         # don't mine
         return
-      
+      for block in block_selected:
+        if isinstance(block, cc.Block):
+          block_selected = block
+          break
       block_selected = self.canvas_owner.get_sprite(block_selected[0])
       if "no-mine" in block_selected.groups:
         # block can't be mined
         return
-      
-      chunk_id = chunk_loader.get_chunk_id(block_pos)
-      chunk_loader.chunk_to_update.add(chunk_id)
+
+      self.add_block_inventory(block_selected.name)
       player_to_update.add(self)
-      block_type = block_selected.block_id
-      chunk_loader.chunk_loaded[chunk_id]["data"].remove(block_selected)
       block_selected.kill()
+
+      
+
+    def add_block_inventory(self, block_type):
+      block_info = BLOCKS[block_type]
+      block_drop = block_info.get("drop")
+      if not block_drop is None:
+        for drop, amount in block_drop.items():
+          if isinstance(amount, tuple):
+            amount = random.randint(amount[0], amount[1])
+          self.inventory[drop] = self.inventory.get(drop, 0) + amount
+
       self.inventory[block_type] = self.inventory.get(block_type, 0) + 1
-    
+
+    def kill(self):
+      self.camera.kill()
+      super.kill()
