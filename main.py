@@ -40,14 +40,13 @@ SIZE_Y = settings.CANVAS_SIZE[1]
 player_count = 0
 players = set()
 player_to_update = set()
-time_since = time.time()
-time_in_game = 0
+game_time = cc.GameTime()
 entity_to_update = set()
 
 canvas = oz.Canvas(" ")
 cc.canvas = canvas
 commands = cd.ShopCommands(open_rooms)
-chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5)
+chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5, game_time)
 #chunk_loader.reset_data()
 keep_alive()
 
@@ -96,7 +95,7 @@ async def start(ctx):
       return
     print(str_author)
     if players == set():
-      time_since = time.time()
+      game_time.init_time()
     players.add(str_author)
     print(players, "LIST")
     player_count += 1
@@ -180,18 +179,20 @@ async def close(channel):
   player = open_rooms[channel]["player"]
   cc.PlayerLoader.save_data(player)
   author = open_rooms[channel]["author"]
-  players.remove(player.name)
+
   print(players, "remove")
+  players.remove(player.name)
   # unload chunks that are loaded by no one
+  
+  print("Update chunk")
+  await update_check()
+  await delete_roles_and_channel(channel)
   
   chunk_loader.unload_surroundings(player.position, author)
   player.kill()
-
-  await update_check()
-  await delete_roles_and_channel(channel)
+  
   if players == set():
     player_count = 0
-    print(player_count, "RESET")
     
   
 @tasks.loop(seconds=60)
@@ -204,12 +205,16 @@ async def check_inactivity():
       if time_since_message.total_seconds() >= TIMEOUT_LIMIT:
         await close(channel)
 
-
-
 @tasks.loop(seconds=10)
 async def update_check():
   global player_to_update
-  global time_in_game
+
+  if players != set():
+    game_time.update_time()
+  # if needs an update
+  update_position = chunk_loader.update_entity()
+  if update_position != []:
+    await update_screens(update_position, None)
   
   for chunk in chunk_loader.chunk_to_update:
     chunk_loader.save_chunk(chunk)
@@ -221,11 +226,6 @@ async def update_check():
     cc.PlayerLoader.save_data(player)
     print(player, "TO UPDATE")
   player_to_update = set()
-
-  if players != set():
-    time_in_game = time.time() - time_since
-
-  chunk_loader.update_entity(time_in_game)
 
 @bot.command()
 async def reset(ctx):
@@ -261,6 +261,7 @@ async def act(reaction):
     
     await reaction.remove(author)
 
+    position_to_update = []
     s_reaction = str(reaction)
     old_pos = player.position.copy()
     was_near = player.is_shop_near()
@@ -269,7 +270,7 @@ async def act(reaction):
     need_update = False
   
     if s_reaction == "⛏️":
-      player.mine(chunk_loader, player_to_update)
+      position_to_update.append(player.mine(chunk_loader, player_to_update))
       need_update = True
 
     elif s_reaction == "🔄":
@@ -283,11 +284,15 @@ async def act(reaction):
         # was able to build if not 
         # return and end function
         return
+      else:
+        position_to_update .append(player.get_position_direction())
 
     await commands.shop(player, reaction)
     
     if old_pos != player.position:
       player_to_update.add(player)
+      position_to_update.append(player.position)
+      need_update = True
       chunk_loader.load_and_unload_chunks(old_pos, player.position, author)
       if was_near and (not player.is_shop_near()):
         # if no longer near a shop remove that reaction
@@ -296,13 +301,14 @@ async def act(reaction):
         await screen.remove_reaction("🛒", bot.user)
         
       
-    elif not need_update:
+    if not need_update:
       #nothing todo
       return
+    else:
+      await send_update(camera, player, reaction.message)
+      if position_to_update != []:
+        await update_screens(position_to_update, camera)
     
-    await send_update(camera, player, reaction.message)
-
-
 
 async def send_update(camera, player, message):
   
@@ -322,14 +328,21 @@ async def send_update(camera, player, message):
   await message.edit(
     content=message_content
   )
-  await update_screens(player, camera)
-  
 
-async def update_screens(player, camera):
+
+async def update_screens(position_list : list, camera):
   # update for other screens
     for todo_camera in canvas.camera_tree:
       if todo_camera != camera:
-        if todo_camera.is_renderable(player.position):
+
+        # check
+        is_renderable = False
+        for position in position_list:
+          if todo_camera.is_renderable(position):
+            is_renderable = True
+            break
+        
+        if is_renderable:        
           camera_info = camera_room[todo_camera]
           player_updated = camera_info['owner']
           screen_x = player_updated.position["x"]
@@ -344,7 +357,7 @@ async def update_screens(player, camera):
               nearby_str += f"⬤ {player_near.name}\n"
           
           await camera_info["message"].edit(
-            content=f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {player.get_turn_str()}\n{nearby_str}```"
+            content=f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {player_updated.get_turn_str()}\n{nearby_str}```"
           )
 
 
@@ -398,11 +411,13 @@ async def tp(ctx, x, y):
   chat = ctx.channel
   if str(chat) != "Chat" or not ctx.author.guild_permissions.administrator:
     return
-
+  
+  await update_check()
+  
   channel = chat.parent
   author = open_rooms[channel]["author"]
   player = open_rooms[channel]["player"]
-
+  
   cd.AdminCommands.tp(x, y, chunk_loader, author, player)
   
   screen = open_rooms[channel]["screen"]
@@ -455,10 +470,19 @@ async def set_move(ctx, unit):
   chat = ctx.channel 
   if str(chat) != "Chat" or not ctx.author.guild_permissions.administrator:
     return
-  channel = ctx.channel.parent
+  channel = chat.parent
   player = open_rooms[channel]["player"]
   
   await chat.send(cd.AdminCommands.set_move_unit(player, int(unit)))
+
+@bot.command()
+async def use(ctx, item):
+  chat = ctx.channel
+  channel = chat.parent
+  player = open_rooms[channel]["player"]
+  
+  response = cd.PlayerCommands.use_item(player, item)
+  await chat.send(response)
 
 
 bot.run(TOKEN)

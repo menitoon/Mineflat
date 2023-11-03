@@ -24,7 +24,8 @@ class PlayerLoader:
     data = {
       "position" : position,
       "inventory": {},
-      "coin" : 0
+      "coin" : 0,
+      "effect" : {}
     }
     # write data
     file = open(f"PlayerData/{owner}.txt", "wb")
@@ -39,7 +40,8 @@ class PlayerLoader:
     data = {
         "position" : owner.position,
         "inventory" : owner.inventory,
-        "coin" : owner.coin
+        "coin" : owner.coin,
+        "effect" : owner.effect
       }
     
     file = open(f"PlayerData/{owner.name}.txt", "wb")
@@ -63,7 +65,8 @@ class PlayerLoader:
     position = data["position"]
     inventory = data["inventory"]
     coin = data["coin"]
-
+    effect = data["effect"]
+    
     print(data, owner)
     
     # create camera
@@ -79,6 +82,8 @@ class PlayerLoader:
      
     # create player
     player = Player(canvas, "@", position, owner, camera, inventory, coin, layer=2)
+    player.effect = effect
+    
     # add reference / camera to returned data (not saved/writen)
     data["reference"] = player
     data["camera"] = camera

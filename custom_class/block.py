@@ -2,7 +2,6 @@ import oz_engine as oz
 from settings import *
 
 
-
 class Block(oz.Sprite):
   __slots__ = "canvas_owner", "char", "position", "name", "block_id", "groups", "layer", "chunk_loader"
   

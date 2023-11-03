@@ -1,5 +1,6 @@
 import os
 import random
+import Item 
 
 def get_seed():
   if os.path.isfile("Chunks/seed.txt"):
@@ -28,10 +29,14 @@ BLOCKS = {
   "diamond" : {"name": "diamond" ,"char": "✦", "group" : ["wall"]},
   "coal" : {"name": "coal" ,"char": "#", "group" : ["wall"]},
   "shop" : {"name" : "shop", "char": "$", "group" : ["wall", "shop", "no-mine"]},
-  "plant_grown" : {"name" : "plant_grown", "char" : "♣", "group": [], "drop": {"seed" : (2, 3)}},
+  "plant_grown" : {"name" : "plant_grown", "char" : "♣", "group": [], "drop": {"seed" : (2, 4)}},
   "seed" : {"name" : "seed", "char" : ".", "group": ["entity"]}
 }
 
+
+ITEMS = {
+  "potion_speed" : {"class" : Item.PotionSpeed, "char" : "🧪🏃"},
+}
 
 ORES = {
   "iron" : {"proba" : 0.05, "neighboor" : 0.5, "max": 8, "price_unit" : 3},
@@ -39,9 +44,22 @@ ORES = {
   "coal" : {"proba" : 0.08, "neighboor" : 0.75, "max" : 10, "price_unit" : 1},
 }
 
+SHOP_ARTICLE = {
+  "iron" : {"price_unit" : 3},
+  "diamond" : {"price_unit" : 6},
+  "coal" : {"price_unit" : 1},
+  "seed" : {"price_unit" : 2}
+}
+
+WIKI = {
+  "stone" : """Stone is a block that can be used to build,
+                    it has no real use for now.""",
+       }
+
 STONE = (0.0001, 1.0)
 SHOP = {"range" : (-1 , -0.00001), "proba" : 0.001}
 PLANT = (-1, -0.5)
 
 AMOUNT_ARTICLE_RANGE = (1, 2)
+PRICE_MULTIPLE_RANGE = (2, 10)
 DAY_CHANGE = 2

@@ -1,4 +1,4 @@
-from settings import BLOCKS, CANVAS_SIZE
+from settings import BLOCKS, CANVAS_SIZE, ITEMS
 
 class AdminCommands:
   
@@ -17,16 +17,17 @@ class AdminCommands:
 
   @staticmethod
   def give(item, amount, player):
-
-    if not item in BLOCKS:
+    
+    if (not item in BLOCKS) and (not item in ITEMS):
       return False
-
+    
     amount = int(amount)
-    does_exist = player.inventory.get(item)
-    if does_exist is None:
-      player.inventory[item] = amount
-    else:
+    in_inventory = player.inventory.get(item)
+    
+    if in_inventory:
       player.inventory[item] += amount
+    else:
+      player.inventory[item] = amount
       
     return True
 

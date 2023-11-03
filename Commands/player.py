@@ -1,4 +1,4 @@
-from settings import BLOCKS
+from settings import BLOCKS, ITEMS
 
 help_message = """
 # Welcome to Mineflat !
@@ -54,10 +54,24 @@ class PlayerCommands:
     text = "# Inventory\n"
     
     for item, amount in inventory.items():
-      text += f"🞄 {item} {BLOCKS[item]['char']} : {amount}\n"
+
+      char = ""
+      if item in ITEMS:
+        char = ITEMS[item]["char"]
+      else:
+        char = BLOCKS[item]["char"]
+      
+      text += f"🞄 {item} {char} : {amount}\n"
 
     if inventory == {}:
       text += "**-empty**"
 
     return text
 
+  @staticmethod
+  def use_item(player, item):
+    if not item in player.inventory:
+      return "You don't have this item in your inventory."
+    else:
+      ITEMS[item]["class"].use(player)
+      return f"```{item} was succefully used```."

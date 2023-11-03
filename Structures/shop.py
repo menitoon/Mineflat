@@ -29,17 +29,17 @@ class Shop:
     amount_of_articles = random.randint(AMOUNT_ARTICLE_RANGE[0], AMOUNT_ARTICLE_RANGE[1]) 
     articles = {}
     # things that can be sold
-    articles_to_pick = ORES.copy()
+    articles_to_pick = SHOP_ARTICLE.copy()
     articles_to_pick = list(articles_to_pick.keys())
-
-    article_base_unit = random.randint(2, 10)
+    
+    article_base_unit = random.randrange(PRICE_MULTIPLE_RANGE[0], PRICE_MULTIPLE_RANGE[1])
     
     for article in range(amount_of_articles):
       article_chosen = random.choice(articles_to_pick)
       articles_to_pick.remove(article_chosen)
-      ore_unit = ORES[article_chosen]["price_unit"]
-      articles[article_chosen] = ore_unit * article_base_unit
-
+      article_unit = SHOP_ARTICLE[article_chosen]["price_unit"]
+      articles[article_chosen] = int(article_unit * article_base_unit)
+    
     return articles
 
 

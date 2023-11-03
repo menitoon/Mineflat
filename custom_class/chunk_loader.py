@@ -2,7 +2,7 @@ import os
 import settings
 import math
 from perlin import PerlinNoise
-from .block import Block
+from .block import *
 from .generation import *
 from settings import *
 from .player_loader import *
@@ -11,16 +11,16 @@ import SpecialBlock as sb
 SIZE = settings.PERLIN_SIZE
 
 class ChunkLoader:
-    __slots__ = "size", "chunk_loaded" , "chunk_to_update", "canvas_owner", "fractal", "perlin", "perlin_plant", "entity_to_update"
+    __slots__ = "size", "chunk_loaded" , "chunk_to_update", "canvas_owner", "fractal", "perlin", "perlin_plant", "entity_to_update", "game_time"
   
-    def __init__(self, canvas_owner, size : tuple, fractal : int):
+    def __init__(self, canvas_owner, size : tuple, fractal : int, game_time):
         self.size = size
         # contains all different perlin noise
         self.perlin = PerlinNoise(SIZE)
         self.perlin.SEED = get_seed()
         self.perlin_plant = PerlinNoise(settings.PLANT_SIZE)
         self.perlin_plant.SEED = get_seed() / 2
-       
+        self.game_time = game_time
         self.chunk_loaded = {}
         self.chunk_to_update = set()
         self.entity_to_update = set()
@@ -79,6 +79,8 @@ class ChunkLoader:
         # regular block
         block = Block(self.canvas_owner, char, position, name_type, name_type, self, groups=group)
 
+      chunk_id = self.get_chunk_id(position)
+      self.chunk_to_update.add(chunk_id)
 
   
     def load_and_unload_chunks(self, pos : dict, new_pos : dict, author):
@@ -145,8 +147,9 @@ class ChunkLoader:
         if chunk_id in self.chunk_to_update:
           self.save_chunk(chunk_id)
           self.chunk_to_update.remove(chunk_id)
-      
-        for b in self.chunk_loaded[chunk_id]["data"]:
+
+        chunk_loaded_instance = self.chunk_loaded[chunk_id]["data"].copy()
+        for b in chunk_loaded_instance:
             b.kill()
 
         del self.chunk_loaded[chunk_id]
@@ -290,10 +293,17 @@ class ChunkLoader:
         os.remove(f"Chunks/{f}")
       for d in os.listdir("PlayerData"):
         os.remove(f"PlayerData/{d}")
+      for f in os.listdir("LocalBlockData"):
+        os.remove(f"LocalBlockData/{f}")
 
       
     def save_chunk(self, chunk_id):
 
+      if not chunk_id in self.chunk_loaded:
+        # prevent from saving an unloaded chunk
+        # resulting in saving the chunk as being empty
+        return
+        
       save_chunk = ""
       last_block = ""
       new_block = ""
@@ -316,9 +326,8 @@ class ChunkLoader:
       if len(block) != 0:
           for b in block:
             block_save = self.canvas_owner.get_sprite(b)
-            if isinstance(block_save, Block):
+            if issubclass(block_save.__class__, Block):
               new_block = block_save.block_id
-              
             
       last_block = new_block
       
@@ -331,8 +340,6 @@ class ChunkLoader:
             }
           )
 
-          
-          
           if new_block != last_block:
                     save_chunk += f"{block_counter}{last_block};"
                     block_counter = 0
@@ -343,10 +350,12 @@ class ChunkLoader:
           new_block = "air"
           if len(block) != 0:
               for b in block:
-                block_save = self.canvas_owner.get_sprite(b)
-                if  isinstance(block_save, Block):
+                block_save = self.canvas_owner.get_sprite(b)    
+                if issubclass(block_save.__class__, Block):
                   new_block = block_save.block_id
-          
+                  break
+                else:
+                  print(block_save.name, "Block Save Refused")
               
 
           block_counter += 1
@@ -378,6 +387,13 @@ class ChunkLoader:
           
       return nearby_players
 
-    def update_entity(self, time_in_game):
-      for entity in self.entity_to_update:
-        entity.update(time_in_game)
+    def update_entity(self):
+      entity_to_update_instance = self.entity_to_update.copy()
+      updates = []
+      for entity in entity_to_update_instance:
+        output_position = entity.update()
+        if not output_position is None:
+          updates.append(output_position)
+          
+      return updates
+      
