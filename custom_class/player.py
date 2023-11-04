@@ -156,7 +156,7 @@ class Player(oz.Sprite):
       if len(block_selected) == 0:
         # if no block to mine
         # don't mine
-        return 
+        return None
       for block in block_selected:
         if isinstance(block, cc.Block):
           block_selected = block
@@ -168,7 +168,7 @@ class Player(oz.Sprite):
 
       self.add_block_inventory(block_selected.block_id)
       player_to_update.add(self)
-      block_selected.kill()
+      block_selected.mined()
       return block_pos
 
     def add_block_inventory(self, block_type):

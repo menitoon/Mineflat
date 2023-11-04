@@ -25,4 +25,7 @@ class Block(oz.Sprite):
     self.chunk_loader.chunk_to_update.add(chunk_id)
     self.chunk_loader.chunk_loaded[chunk_id]["data"].remove(self)
     super().kill()
- 
+
+
+  def mined(self):
+    self.kill()

@@ -1,2 +1,2 @@
 from .shop import *
-from .chest import *
+from .world import *

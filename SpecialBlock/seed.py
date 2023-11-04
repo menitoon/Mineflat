@@ -11,7 +11,7 @@ class Seed(block.Block):
     self, canvas, char : str, position : dict,
     name : str, block_id : str, chunk_loader, layer=0 ,groups=[] 
   ):
-    print("CHECK : ", issubclass(self.__class__, block.Block) )
+    
     self.register_info(canvas, char, position, name , groups, layer)
     self.block_id = block_id
     self.chunk_loader = chunk_loader
@@ -54,8 +54,15 @@ class Seed(block.Block):
     self.chunk_loader.entity_to_update.remove(self)
     super().kill()
 
+  def mined(self):
+    self.destroy_data()
+    self.kill()
+
   def grown(self):
     self.chunk_loader.add_block(BLOCKS["plant_grown"], self.position)
     # delete file data from LocalBlockData
-    os.remove(f"LocalBlockData/{self.position['x']},{self.position['y']}.txt")
+    self.destroy_data()
     self.kill()
+
+  def destroy_data(self):
+    os.remove(f"LocalBlockData/{self.position['x']},{self.position['y']}.txt")

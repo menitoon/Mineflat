@@ -30,7 +30,8 @@ BLOCKS = {
   "coal" : {"name": "coal" ,"char": "#", "group" : ["wall"]},
   "shop" : {"name" : "shop", "char": "$", "group" : ["wall", "shop", "no-mine"]},
   "plant_grown" : {"name" : "plant_grown", "char" : "♣", "group": [], "drop": {"seed" : (2, 4)}},
-  "seed" : {"name" : "seed", "char" : ".", "group": ["entity"]}
+  "seed" : {"name" : "seed", "char" : ".", "group": ["entity"]},
+  "chest" : {"name" : "chest", "char" : "☒", "group" : ["wall"]}
 }
 
 
@@ -53,7 +54,8 @@ SHOP_ARTICLE = {
 
 WIKI = {
   "stone" : """Stone is a block that can be used to build,
-                    it has no real use for now.""",
+                it has no real use for now.""",
+  
        }
 
 STONE = (0.0001, 1.0)

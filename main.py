@@ -1,8 +1,10 @@
 import discord 
 from discord.ext import commands, tasks
+from discord import app_commands
 
 import oz_engine as oz
 import custom_class as cc
+import World as wd
 import Structures as st
 import settings
 import Commands as cd
@@ -45,11 +47,13 @@ entity_to_update = set()
 
 canvas = oz.Canvas(" ")
 cc.canvas = canvas
-commands = cd.ShopCommands(open_rooms)
+
 chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5, game_time)
+world = wd.World(canvas, open_rooms, chunk_loader, player_to_update, players)
+
+
 #chunk_loader.reset_data()
 keep_alive()
-
 
 
 @bot.event
@@ -78,12 +82,12 @@ async def on_ready():
     for r in roles:
       if str(r).startswith("GAMETOKEN#"):
         await r.delete()
-    
+
 async def delete_all_channel_from_category(category):
     for channel in category.channels:
       await channel.delete()
 
-@bot.command()
+@bot.command(name="start")
 async def start(ctx):
 
     global player_count
@@ -180,11 +184,9 @@ async def close(channel):
   cc.PlayerLoader.save_data(player)
   author = open_rooms[channel]["author"]
 
-  print(players, "remove")
   players.remove(player.name)
   # unload chunks that are loaded by no one
   
-  print("Update chunk")
   await update_check()
   await delete_roles_and_channel(channel)
   
@@ -246,120 +248,9 @@ async def on_reaction_add(reaction, user):
     player = open_rooms[channel]["player"]
 
     if player.is_in_shop:
-      await commands.handle_shop_transaction(reaction, user, channel)
+      await world.shop.handle_shop_transaction(reaction, user, channel, open_rooms)
     else:
-      await act(reaction)
-
-async def act(reaction):
-    channel = reaction.message.channel
-    if str(channel) != "Chat":
-      open_rooms[channel]["last_activity"] = datetime.datetime.utcnow()
-    player = open_rooms[channel]["player"]
-    camera = open_rooms[channel]["camera"]
-    author = open_rooms[channel]["author"]
-
-    
-    await reaction.remove(author)
-
-    position_to_update = []
-    s_reaction = str(reaction)
-    old_pos = player.position.copy()
-    was_near = player.is_shop_near()
-    player.move(s_reaction)
-
-    need_update = False
-  
-    if s_reaction == "⛏️":
-      position_to_update.append(player.mine(chunk_loader, player_to_update))
-      need_update = True
-
-    elif s_reaction == "🔄":
-      player.turn()
-      need_update = True
-    
-    elif s_reaction == "🏗️":
-      need_update = player.build(chunk_loader)
-      if need_update == False:
-        # execute build command and checks if 
-        # was able to build if not 
-        # return and end function
-        return
-      else:
-        position_to_update .append(player.get_position_direction())
-
-    await commands.shop(player, reaction)
-    
-    if old_pos != player.position:
-      player_to_update.add(player)
-      position_to_update.append(player.position)
-      need_update = True
-      chunk_loader.load_and_unload_chunks(old_pos, player.position, author)
-      if was_near and (not player.is_shop_near()):
-        # if no longer near a shop remove that reaction
-        screen = open_rooms[channel]["screen"]
-        player.is_near_shop = False
-        await screen.remove_reaction("🛒", bot.user)
-        
-      
-    if not need_update:
-      #nothing todo
-      return
-    else:
-      await send_update(camera, player, reaction.message)
-      if position_to_update != []:
-        await update_screens(position_to_update, camera)
-    
-
-async def send_update(camera, player, message):
-  
-  r = camera.render()
-  string_pos = f'({player.position["x"]}, {player.position["y"]})'
-  nearby_players = chunk_loader.get_nearby_players(player, players)
-
-  nearby_str = ""
-  
-  if nearby_players != set():
-    nearby_str = "nearby players:\n"
-    for player_near in nearby_players:
-      nearby_str += f"⬤ {player_near.name}\n"
-
-  message_content = f"```{r}\n{string_pos}\nDirection : {player.get_turn_str()}\n{nearby_str}```"
-  
-  await message.edit(
-    content=message_content
-  )
-
-
-async def update_screens(position_list : list, camera):
-  # update for other screens
-    for todo_camera in canvas.camera_tree:
-      if todo_camera != camera:
-
-        # check
-        is_renderable = False
-        for position in position_list:
-          if todo_camera.is_renderable(position):
-            is_renderable = True
-            break
-        
-        if is_renderable:        
-          camera_info = camera_room[todo_camera]
-          player_updated = camera_info['owner']
-          screen_x = player_updated.position["x"]
-          screen_y = player_updated.position["y"]
-
-          nearby_str = ""
-          nearby_players = chunk_loader.get_nearby_players(player_updated, players)
-          
-          if nearby_players != set():
-            nearby_str = "nearby players:\n"
-            for player_near in nearby_players:
-              nearby_str += f"⬤ {player_near.name}\n"
-          
-          await camera_info["message"].edit(
-            content=f"```{todo_camera.render()}\n({screen_x}, {screen_y})\nDirection : {player_updated.get_turn_str()}\n{nearby_str}```"
-          )
-
+      await world.act(reaction)
 
 async def add_reactions(message):
   CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
@@ -370,7 +261,7 @@ async def add_reactions(message):
 async def sell(ctx, amount):
   if str(ctx.channel) != "Chat":
     return
-  await commands.sell(ctx, amount, player_to_update)
+  await cd.ShopCommands.sell(ctx, amount, player_to_update, open_rooms)
 
 @bot.command()
 async def coin(ctx):
@@ -380,11 +271,11 @@ async def coin(ctx):
   else:
     channel = chat
     
-  await chat.send(commands.show_coin(str(ctx.author), players, canvas))
+  await chat.send(world.shop.show_coin(str(ctx.author), players, canvas))
 
 @bot.command()
 async def leader(ctx):
-  await commands.leaderboard(ctx, players, canvas)
+  await world.shop.leaderboard(ctx, players, canvas)
 
 @bot.command()
 async def inventory(ctx):
@@ -421,7 +312,7 @@ async def tp(ctx, x, y):
   cd.AdminCommands.tp(x, y, chunk_loader, author, player)
   
   screen = open_rooms[channel]["screen"]
-  await send_update(player.camera, player, screen)
+  await world.send_update(player.camera, player, screen)
 
 @bot.command()
 async def give(ctx, item , amount):
@@ -455,8 +346,9 @@ async def get_help(ctx):
     return
   await ctx.channel.send(cd.help_message)
 
-@bot.command()
+@bot.command(description="test")
 async def clip(ctx):
+  
   chat = ctx.channel 
   if str(chat) != "Chat" or not ctx.author.guild_permissions.administrator:
     return
