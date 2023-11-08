@@ -5,7 +5,6 @@ from discord import app_commands
 import oz_engine as oz
 import custom_class as cc
 import World as wd
-import Structures as st
 import settings
 import Commands as cd
 from keep_alive import keep_alive
@@ -49,7 +48,7 @@ canvas = oz.Canvas(" ")
 cc.canvas = canvas
 
 chunk_loader = cc.ChunkLoader(canvas, (SIZE_X, SIZE_Y), 5, game_time)
-world = wd.World(canvas, open_rooms, chunk_loader, player_to_update, players)
+world = wd.World(bot, canvas, open_rooms, chunk_loader, player_to_update, players)
 
 
 #chunk_loader.reset_data()
@@ -246,11 +245,8 @@ async def on_reaction_add(reaction, user):
       channel = channel.parent
     
     player = open_rooms[channel]["player"]
-
-    if player.is_in_shop:
-      await world.shop.handle_shop_transaction(reaction, user, channel, open_rooms)
-    else:
-      await world.act(reaction)
+  
+    await world.act(reaction)
 
 async def add_reactions(message):
   CONTROLS = ("◀", "🔽", "🔼", "▶", "⛏️", "🏗️" , "🔄",)
@@ -261,7 +257,7 @@ async def add_reactions(message):
 async def sell(ctx, amount):
   if str(ctx.channel) != "Chat":
     return
-  await cd.ShopCommands.sell(ctx, amount, player_to_update, open_rooms)
+  await world.shop.sell(ctx, amount, player_to_update)
 
 @bot.command()
 async def coin(ctx):

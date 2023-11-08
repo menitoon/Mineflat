@@ -5,7 +5,7 @@ import random
 
 class Player(oz.Sprite):
 
-    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_shop", "is_near_shop", "coin", "block_in_hand", "clip", "move_unit", "effect"
+    __slots__ = "canvas_owner", "char", "position", "name", "group", "layer", "direction", "reach", "camera", "inventory", "is_in_table", "table", "coin", "block_in_hand", "clip", "move_unit", "effect"
 
     def __init__(
       self, canvas_owner, char : str, position : dict,
@@ -19,17 +19,17 @@ class Player(oz.Sprite):
         self.reach = 3
         self.camera = camera
         self.inventory = inventory
-        self.is_near_shop = False
-        self.is_in_shop = False
+        self.is_in_table = False
         self.coin = coin
         self.block_in_hand = "air"
         self.clip = False
         self.move_unit = 1
         self.effect = {}
+        self.table = None
   
     def move(self, action : str):
 
-        if self.is_in_shop:
+        if self.is_in_table:
           return
       
         if action == "🔼":
@@ -63,23 +63,7 @@ class Player(oz.Sprite):
             self.move_unit = 1
   
   
-    def is_shop_near(self):
-      surrondings = (
-        (-1, 0), (1, 0), (0, 1), (0, -1),
-        (-1, 1), (1, 1), (-1, -1), (1, -1)
-      )
-
-      for around_position in surrondings:
-        around_position = {
-          "x" : around_position[0] + self.position["x"],
-          "y" : around_position[1] + self.position["y"]
-                          }
-        
-        if "shop" in self.get_colliding_groups(around_position):
-          return around_position
-
-      return None
-          
+     
     def turn(self):
       DIRECTION = (
         {"x" : 1, "y" : 0},
@@ -123,7 +107,7 @@ class Player(oz.Sprite):
       build_destination = self.get_position_direction()
   
       block_destination = self.canvas_owner.get_elements(build_destination)
-      print(block_destination)
+      
       if block_destination != []:
         # if there is a block return
         return False
@@ -131,15 +115,11 @@ class Player(oz.Sprite):
       chunk_id = chunk_loader.get_chunk_id(build_destination)  
       # get block chosen to build
       block_type_placed = self.block_in_hand
-
+      self.lose_item(block_type_placed, 1)
       # place block in canvas data
       chunk_loader.add_block(BLOCKS[block_type_placed], build_destination)
       
-      # remove 1 block from inventory
-      self.inventory[block_type_placed] -= 1
-      if self.inventory[block_type_placed] == 0:
-        # if no block left remove key from inventory
-        del self.inventory[block_type_placed]
+      
       return True
   
     def mine(self, chunk_loader, player_to_update):
@@ -204,3 +184,13 @@ class Player(oz.Sprite):
     def kill(self):
       self.camera.kill()
       super().kill()
+
+
+    def lose_item(self, item, amount):
+      # remove 1 block from inventory
+      self.inventory[item] -= amount
+      if self.inventory[item] == 0:
+        # if no block left remove key from inventory
+        del self.inventory[item]
+
+    

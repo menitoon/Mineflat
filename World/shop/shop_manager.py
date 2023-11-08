@@ -4,7 +4,7 @@ from settings import *
 
 SEED = get_seed()
 
-class Shop:
+class ShopManager:
   __slot__ = "position"
 
   def __init__(self, position : dict):

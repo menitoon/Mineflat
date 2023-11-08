@@ -1,11 +1,13 @@
 import pickle
 import os
+from settings import CHEST_SLOTS
 
-class Chest:
+class ChestManager:
 
   __slot__ = "inventory", "position"
   
-  def __init__(self):
+  def __init__(self, position):
+    self.position = position
     self.inventory = self.init_inventory()
     
   def init_inventory(self):
@@ -17,4 +19,4 @@ class Chest:
         return pickle.load(f)
     else:
       # init inventory
-      return []
+      return [None] * CHEST_SLOTS

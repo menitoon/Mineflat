@@ -1,5 +1,5 @@
 import discord
-import Structures as st
+from .shop_manager import ShopManager
 import settings
 import custom_class as cc
 import os
@@ -8,54 +8,42 @@ NUMBERS = (
           ("1️⃣"), ("2️⃣"), ("3️⃣"), ("4️⃣"), ("5️⃣"), ("6️⃣"), ("7️⃣"), ("8️⃣"), ("9️⃣"), ("🔟")
         )
 
-class Shop:
-
+class BotManager:
+  
   __slot__ = "open_rooms"
-
+  
   def __init__(self, open_rooms : dict):
     self.open_rooms = open_rooms
   
-  async def shop(self, player, reaction):
+  async def shop(self, player, reaction, shop_position):
+      #execute shop
+      player.is_in_table = True
+      # get channels, message, chat info
+      channel = reaction.message.channel
+      screen = self.open_rooms[channel]["screen"]
+      chat = self.open_rooms[channel]["chat"]
+      
+      shop = ShopManager(shop_position)
+      articles = shop.define_articles()
 
-    shop_position = player.is_shop_near()
-    
-    if not shop_position is None:
-      if not player.is_near_shop:
-        # add reaction to enter shop
-        await reaction.message.add_reaction("🛒")
-        player.is_near_shop = True
-      elif str(reaction) == "🛒":
-        #execute shop
-        player.is_in_shop = True
-        # get channels, message, chat info
-        channel = reaction.message.channel
-        screen = self.open_rooms[channel]["screen"]
-        chat = self.open_rooms[channel]["chat"]
-
-        shop = st.Shop(shop_position)
-        articles = shop.define_articles()
-
-        shop_info = shop.get_article_sentence(articles, player)
-        text = shop_info["text"]
-        has_item = shop_info["has_item"]
+      shop_info = shop.get_article_sentence(articles, player)
+      text = shop_info["text"]
+      has_item = shop_info["has_item"]
         
-        shop_message = await chat.send(text)
+      shop_message = await chat.send(text)
         
-        self.open_rooms[channel]["shop_message"] = shop_message
-        self.open_rooms[channel]["shop_article"] = articles
-        self.open_rooms[channel]["shop"] = shop
-        inventory = player.inventory
+      self.open_rooms[channel]["shop_message"] = shop_message
+      self.open_rooms[channel]["shop_article"] = articles
+      self.open_rooms[channel]["shop"] = shop
+      inventory = player.inventory
 
-        
-        
-        for article in has_item:
+      for article in has_item:
 
-          key = list(article.values())[0]
-          await shop_message.add_reaction(NUMBERS[key])
+        key = list(article.values())[0]
+        await shop_message.add_reaction(NUMBERS[key])
             
-        await shop_message.add_reaction("❌")
-    else:
-      player.is_in_shop = False
+      await shop_message.add_reaction("❌")
+   
 
  
   async def handle_shop_transaction(self, reaction, user, channel):
@@ -69,7 +57,8 @@ class Shop:
       await reaction.remove(user)
       self.close(channel)
       player = self.open_rooms[channel]["player"]
-      player.is_in_shop = False
+      player.is_in_table = False
+      player.table = None
       return
     
     for number, article in zip(NUMBERS, articles):
@@ -78,6 +67,7 @@ class Shop:
         self.open_rooms[channel]["article_selected"] = article
         await reaction.remove(user)
         break
+        
 
   async def sell(self, ctx, amount, player_to_update):
 

@@ -31,7 +31,7 @@ BLOCKS = {
   "shop" : {"name" : "shop", "char": "$", "group" : ["wall", "shop", "no-mine"]},
   "plant_grown" : {"name" : "plant_grown", "char" : "♣", "group": [], "drop": {"seed" : (2, 4)}},
   "seed" : {"name" : "seed", "char" : ".", "group": ["entity"]},
-  "chest" : {"name" : "chest", "char" : "☒", "group" : ["wall"]}
+  "chest" : {"name" : "chest", "char" : "☒", "group" : ["wall", "chest"]}
 }
 
 
@@ -65,3 +65,5 @@ PLANT = (-1, -0.5)
 AMOUNT_ARTICLE_RANGE = (1, 2)
 PRICE_MULTIPLE_RANGE = (2, 10)
 DAY_CHANGE = 2
+
+CHEST_SLOTS = 5
