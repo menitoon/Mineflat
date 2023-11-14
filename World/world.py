@@ -1,5 +1,5 @@
-from . import shop
-from . import chest
+from . import Shop
+from . import Chest
 
 import datetime
 
@@ -9,6 +9,7 @@ class World:
   __slot__ = "bot", "open_rooms", "chunk_loader", "player_to_update", "players", "shop", "chest", "canvas", "player", "table_postion", "reaction"
   
   def __init__(self, bot,  canvas,  open_rooms, chunk_loader, player_to_update, players):
+    
     self.bot = bot
     self.canvas = canvas
     self.open_rooms = open_rooms
@@ -16,8 +17,8 @@ class World:
     self.player_to_update = player_to_update
     self.players = players
     
-    self.shop = shop.BotManager(open_rooms)
-    self.chest = chest.BotManager(open_rooms)
+    self.shop = Shop.BotManager(open_rooms)
+    self.chest = Chest.BotManager(open_rooms)
   
   async def act(self, reaction):
     channel = reaction.message.channel
@@ -204,16 +205,18 @@ class World:
     self.player.table = "shop"
     await self.shop.shop(self.player, self.reaction, self.table_position)
 
-  async def init_chest(self):
-    self.player.table = "chest"
-    await self.chest.send_inventory(self.reaction, self.table_position)
-  
   async def act_shop(self):
     channel = self.reaction.message.channel.parent
     author = self.open_rooms[channel]["author"]
     await self.shop.handle_shop_transaction(self.reaction, author, channel)
-
+  
+  async def init_chest(self):
+    self.player.table = "chest"
+    channel = self.reaction.message.channel
+    self.open_rooms[channel]["table_position"] = self.table_position
+    await self.chest.send_inventory(channel, self.table_position)
+  
   async def act_chest(self):
     channel = self.reaction.message.channel.parent
     author = self.open_rooms[channel]["author"]
-    await self.chest.handle_chest_reaction(self.reaction, author, channel)
+    await self.chest.handle_chest_reaction(self.reaction, author, self.table_position)

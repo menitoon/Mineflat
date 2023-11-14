@@ -1,4 +1,5 @@
 from settings import BLOCKS, ITEMS
+from World import Chest
 
 help_message = """
 # Welcome to Mineflat !
@@ -75,3 +76,40 @@ class PlayerCommands:
     else:
       ITEMS[item]["class"].use(player)
       return f"```{item} was succefully used```."
+
+  @staticmethod
+  def drop_item(item, amount, open_rooms, chat):
+    channel = chat.parent
+
+    amount = int(amount)
+    player = open_rooms[channel]["player"]
+    table_position = open_rooms[channel]["table_position"]
+
+    if item in player.inventory:
+      # item is in inventory
+      # check if enough item of that type:
+      if player.inventory[item] - amount >= 0:
+        # enough item
+        player.inventory[item] -= amount
+      else:
+        # amount desired is too important bruh
+        return f"**️You don't have enough {item} to drop, you only have {amount} {item}.**"
+    else:
+      # player doesn't have this item in his inventory
+      return f"**You don't have {item} in your inventory.**"
+    chest = Chest.ChestManager(table_position)
+    choice_slot = open_rooms[channel]["choice_slot"]
+    sentence = chest.add_item(choice_slot, item, amount)
+    return sentence
+
+  @staticmethod
+  def take_item(amount, open_rooms, chat):
+    channel = chat.parent
+    amount = int(amount)
+    player = open_rooms[channel]["player"]
+    table_position = open_rooms[channel]["table_position"]
+
+    chest = Chest.ChestManager(table_position)
+    choice_slot = open_rooms[channel]["choice_slot"]
+    sentence = chest.remove_item(choice_slot, amount)
+    return sentence

@@ -44,8 +44,6 @@ class BotManager:
             
       await shop_message.add_reaction("❌")
    
-
- 
   async def handle_shop_transaction(self, reaction, user, channel):
   
     str_reaction = str(reaction)
