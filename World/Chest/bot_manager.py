@@ -55,7 +55,7 @@ class BotManager:
     chat = reaction.message.channel
     channel = chat.parent
     message_chest = self.open_rooms[channel]["message_chest"]
-
+    
     chest = ChestManager(table_position)
     choice_slot = self.open_rooms[channel].get("choice_slot")
     if not choice_slot is None:
@@ -94,8 +94,18 @@ class BotManager:
     
     else:
       reaction_index = NUMBERS.index(str(reaction))
-      self.open_rooms[channel]["choice_slot"] = reaction_index
-      action_message = await chat.send(f"What do you want to do with {str(reaction)}?\n🤌 = take\n✋ = drop")
-      await action_message.add_reaction("🤌")
+      self.open_rooms[channel]["choice_slot"] = reaction_index     
+      table_position = self.open_rooms[channel]["table_position"]
+      chest = ChestManager(table_position)
+      if chest.inventory[reaction_index] is None:
+        # can't select take since is empty
+        action_message = await chat.send(f"What do you want to do with {str(reaction)}?\n**✋ = drop**\n*🤌 = take*")
+      else:
+        # all options are possible 
+        action_message = await chat.send(f"What do you want to do with {str(reaction)}?\n**✋ = drop**\n**🤌 = take**")
+        await action_message.add_reaction("🤌")
+
+      
+      # can always drop something so add reaction in any cases
       await action_message.add_reaction("✋")
       

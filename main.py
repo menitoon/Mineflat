@@ -373,7 +373,7 @@ async def use(ctx, item):
   await chat.send(response)
 
 @bot.command()
-async def drop(ctx, item, amount):
+async def drop(ctx, item=None, amount=None):
   chat = ctx.channel 
   sentence = cd.PlayerCommands.drop_item(item, amount, open_rooms, chat)
   await chat.send(sentence)
@@ -385,7 +385,7 @@ async def drop(ctx, item, amount):
   await world.chest.send_inventory(channel, table_position)
 
 @bot.command()
-async def take(ctx, amount):
+async def take(ctx, amount=None):
   chat = ctx.channel
   sentence = cd.PlayerCommands.take_item(amount, open_rooms, ctx.channel)
   await chat.send(sentence)

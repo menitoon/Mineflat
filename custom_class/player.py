@@ -151,7 +151,7 @@ class Player(oz.Sprite):
       block_selected.mined()
       return block_pos
 
-    def add_block_inventory(self, block_type):
+    def add_block_inventory(self, block_type : str, amount=1):
       block_info = BLOCKS[block_type]
       block_drop = block_info.get("drop")
       if not block_drop is None:
@@ -160,8 +160,9 @@ class Player(oz.Sprite):
             amount = random.randint(amount[0], amount[1])
           self.inventory[drop] = self.inventory.get(drop, 0) + amount
 
-      self.inventory[block_type] = self.inventory.get(block_type, 0) + 1
+      self.inventory[block_type] = self.inventory.get(block_type, 0) + amount
 
+  
     def get_move_unit_for_direction(self, direction : dict):
       # get how many unit the player can move before he hits a wall
       # or has no more unit to move
@@ -185,7 +186,18 @@ class Player(oz.Sprite):
       self.camera.kill()
       super().kill()
 
+    def add_object_inventory(self, item, amount):
+      if item in BLOCKS:
+        # add a block
+        self.add_block_inventory(item, amount)
+      else:
+        # add an item
+        self.add_item_inventory(item, amount)
 
+    def add_item_inventory(self, item, amount):
+      item_info = ITEMS[item]
+      self.inventory[item] = self.inventory.get(item, 0) + amount
+  
     def lose_item(self, item, amount):
       # remove 1 block from inventory
       self.inventory[item] -= amount

@@ -50,13 +50,21 @@ class ChestManager:
     
     amount = int(amount)
     item = list(self.inventory[slot].keys())[0]
+
+    data = {}
     
     if self.inventory[slot] is None:
-      return f"**️You can't take items, since slot {slot} is empty.**"
+      data["could_take"] = False
+      data["sentence"] = f"**You don't have {item} in your inventory.**"
     elif (self.inventory[slot][item] - amount) >= 0:
       
       self.inventory[slot][item] -= amount
       if self.inventory[slot][item] == 0:
         self.inventory[slot] = None
       self.save_inventory()
-      return f"You took {amount} {item} from the chest."
+      data["could_take"] = True
+      data["sentence"] = f"You took {amount} {item} from the chest."
+      data["item"] = item
+    
+
+    return data

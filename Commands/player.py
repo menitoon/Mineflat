@@ -79,8 +79,20 @@ class PlayerCommands:
 
   @staticmethod
   def drop_item(item, amount, open_rooms, chat):
+
+
     channel = chat.parent
 
+    # exit conditions
+
+    if amount is None:
+      return "**❌Please Speficy the amount of items you want to drop\nUse : !drop [item] [AMOUNT] ⬅️HERE**"
+    if item is None:
+      return "**❌Please Speficy the item you want to drop\nUse : !drop [item] ⬅️HERE [amount]**"
+
+    if amount <= 0:
+      return "**❌You can't drop less than 1 item.\**"
+    
     amount = int(amount)
     player = open_rooms[channel]["player"]
     table_position = open_rooms[channel]["table_position"]
@@ -105,11 +117,23 @@ class PlayerCommands:
   @staticmethod
   def take_item(amount, open_rooms, chat):
     channel = chat.parent
+
+    if amount is None:
+      return "**❌Please Speficy the amount of items you want to take\nUse : !take [AMOUNT] ⬅️HERE**"
+    
     amount = int(amount)
     player = open_rooms[channel]["player"]
     table_position = open_rooms[channel]["table_position"]
 
     chest = Chest.ChestManager(table_position)
     choice_slot = open_rooms[channel]["choice_slot"]
-    sentence = chest.remove_item(choice_slot, amount)
+    chest_data_result = chest.remove_item(choice_slot, amount)
+
+    sentence = chest_data_result["sentence"]
+    could_take = chest_data_result["could_take"]
+
+    if could_take:
+      item = chest_data_result["item"]
+      player.add_object_inventory(item, amount)
+    
     return sentence
